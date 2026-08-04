@@ -605,6 +605,10 @@ Ongeza Rekodi
 <h2>Data Management</h2>
 <p>Futa rekodi zote za Import zilizohifadhiwa kwenye kifaa hiki.</p>
 <button type="button" class="clean-data-btn" id="importCleanDataBtn">Clean Data</button>
+<button type="button" class="clear-btn" id="importLogoutBtn" style="width:100%; margin-top:10px;">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+Log Out
+</button>
 </aside>
 </div>
 </div>
@@ -1368,6 +1372,11 @@ const ChapAuth = (() => {
   function clearError() { errorEl.textContent = ""; emailInput.classList.remove("invalid"); passwordInput.classList.remove("invalid"); }
   function openModal() { clearError(); form.reset(); backdrop.classList.add("show"); emailInput.focus(); }
   function closeModal() { backdrop.classList.remove("show"); }
+  function logout() {
+    authenticated = false;
+    window.location.hash = "#dashboard";
+    ChapUtils.showToast("Umetoka kwenye Import Data", "success");
+  }
   function handleSubmit(e) {
     e.preventDefault();
     clearError();
@@ -1402,7 +1411,7 @@ const ChapAuth = (() => {
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && backdrop.classList.contains("show")) closeModal(); });
     form.addEventListener("submit", handleSubmit);
   }
-  return { init, isAuthenticated, openModal };
+  return { init, isAuthenticated, openModal, logout };
 })();
 
 const ChapImportDB = (() => {
@@ -1560,7 +1569,7 @@ const ChapImport = (() => {
   let undoStack = [];
   let redoStack = [];
   let addBtn, fileInput, undoBtn, redoBtn, searchInput, filterSelect, exportBtn, cleanDataBtn, tbody, emptyState, paginationEl, recordCountEl, tablesListEl, tablesTotalEl, showAllBtn;
-  let mainPanelEl, addRecordPanelEl, addRecordTriggerBtn, addRecordTargetLabelEl, addRecordBackBtn, addRecordFormEl, addRecordClearBtnEl;
+  let mainPanelEl, addRecordPanelEl, addRecordTriggerBtn, addRecordTargetLabelEl, addRecordBackBtn, addRecordFormEl, addRecordClearBtnEl, logoutBtn;
   let addRecordTargetTable = null;
   let listenersBound = false;
   function normalizeHeader(h) { return String(h || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
@@ -1991,6 +2000,7 @@ const ChapImport = (() => {
     addRecordBackBtn = document.getElementById("importAddRecordBackBtn");
     addRecordFormEl = document.getElementById("importAddRecordForm");
     addRecordClearBtnEl = document.getElementById("importAddRecordClearBtn");
+    logoutBtn = document.getElementById("importLogoutBtn");
     if (!listenersBound) {
       addBtn.addEventListener("click", () => fileInput.click());
       fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
@@ -2000,6 +2010,7 @@ const ChapImport = (() => {
       filterSelect.addEventListener("change", applyFilter);
       exportBtn.addEventListener("click", exportExcel);
       cleanDataBtn.addEventListener("click", cleanAllData);
+      logoutBtn.addEventListener("click", () => { closeAddRecordPanel(); ChapAuth.logout(); });
       showAllBtn.addEventListener("click", showAllTables);
       addRecordTriggerBtn.addEventListener("click", promptAddRecord);
       addRecordBackBtn.addEventListener("click", closeAddRecordPanel);
