@@ -1,678 +1,739 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
-
-
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root { --green:#16a34a; --green-dark:#15803d; --ink:#18231c; --muted:#68756d; --line:#e3e9e5; --surface:#fff; --canvas:#f5f7f6; --header-h:70px; --sidebar-w:248px; --sidebar-mini:76px; --table-zoom:1; --table-zoom-base:1; --table-font-base:.82rem; --table-head-font-base:.70rem; --table-padding-x:6px; --table-padding-y:14px; --table-min-width:940px; }
-  * { box-sizing:border-box; }
-  html { min-width:320px; background:var(--canvas); }
-  body { margin:0; min-width:320px; min-height:100vh; overflow-x:hidden; background:var(--canvas); color:var(--ink); font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-  button, input { font:inherit; }
-  button { cursor:pointer; }
-  button:focus-visible, input:focus-visible, a:focus-visible { outline:3px solid rgba(22,163,74,.25); outline-offset:2px; }
-
-  .app-header { position:fixed; z-index:50; inset:0 0 auto; height:var(--header-h); display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(255,255,255,.96); border-bottom:1px solid var(--line); box-shadow:0 2px 10px rgba(22,35,28,.05); }
-  .header-left, .brand { display:flex; align-items:center; min-width:0; }
-  .brand { gap:11px; }
-  .brand-mark { display:grid; flex:0 0 38px; width:38px; height:38px; place-items:center; color:#fff; background:var(--green); border-radius:11px; box-shadow:0 6px 14px rgba(22,163,74,.22); }
-  .brand-name { overflow:hidden; color:#14231a; font-size:18px; font-weight:750; letter-spacing:-.35px; text-overflow:ellipsis; white-space:nowrap; }
-  .hamburger-btn { display:none; width:40px; height:40px; margin-right:10px; place-items:center; color:#26382d; background:transparent; border:0; border-radius:10px; }
-  .hamburger-btn:hover { background:#eff8f1; color:var(--green-dark); }
-
-  .sidebar { position:fixed; z-index:40; top:var(--header-h); bottom:0; left:0; display:flex; flex-direction:column; width:var(--sidebar-w); padding:20px 12px 14px; overflow:hidden; background:#fff; border-right:1px solid var(--line); transition:width .24s ease, transform .24s ease; }
-  .sidebar-nav { display:grid; gap:6px; }
-  .nav-item, .collapse-btn { display:flex; align-items:center; gap:13px; width:100%; min-width:0; height:48px; padding:0 13px; color:#56635b; text-decoration:none; background:transparent; border:0; border-radius:10px; font-weight:650; text-align:left; white-space:nowrap; transition:background .16s ease, color .16s ease; }
-  .nav-item:hover, .collapse-btn:hover { color:var(--green-dark); background:#eff9f1; }
-  .nav-item.active { color:#116d32; background:#dcf7e4; }
-  .nav-icon { display:grid; flex:0 0 22px; width:22px; height:22px; place-items:center; }
-  .nav-label { overflow:hidden; text-overflow:clip; }
-  .collapse-btn { margin-top:auto; }
-  .sidebar.collapsed { width:var(--sidebar-mini); }
-  .sidebar.collapsed .nav-item, .sidebar.collapsed .collapse-btn { justify-content:center; padding:0; }
-  .sidebar.collapsed .nav-label { width:0; opacity:0; }
-  .sidebar.collapsed .collapse-btn svg { transform:rotate(180deg); }
-  .sidebar-backdrop { display:none; }
-
-  .main-content { min-width:0; min-height:100vh; margin-left:var(--sidebar-w); padding:calc(var(--header-h) + 32px) 32px 40px; transition:margin-left .24s ease; }
-  body.sidebar-collapsed .main-content { margin-left:var(--sidebar-mini); }
-  .view { width:min(100%, 1440px); margin:0 auto; }
-  .view[hidden] { display:none !important; }
-  .view-header { margin:0 0 22px; }
-  .view-header h1 { margin:0; font-size:clamp(24px, 2.2vw, 30px); line-height:1.2; letter-spacing:-.75px; }
-  .section-title { margin:30px 0 14px; font-size:18px; letter-spacing:-.25px; }
-  .card { min-width:0; background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:0 6px 24px rgba(22,35,28,.055); }
-
-  .table-card { overflow:hidden; }
-  #view-dashboard .table-card { width:100%; max-width:1240px; margin-inline:auto; }
-  .table-toolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 20px; border-bottom:1px solid var(--line); }
-  .toolbar-controls { display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0; }
-  .filter-control { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; }
-  .filter-control select { height:36px; max-width:155px; padding:0 28px 0 9px; color:#405047; background:#fff; border:1px solid #d7e0da; border-radius:8px; outline:0; }
-  .filter-control select:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,163,74,.12); }
-  .export-btn { flex:0 0 auto; height:36px; padding:0 12px; color:#14733a; background:#eff9f1; border:1px solid #bfe8ca; border-radius:8px; font-size:12px; font-weight:750; white-space:nowrap; }
-  .export-btn:hover { color:#fff; background:var(--green); border-color:var(--green); }
-  .search-box { display:flex; align-items:center; flex:1 1 300px; max-width:440px; min-width:0; gap:9px; padding:0 12px; color:#7a8780; background:#f8faf8; border:1px solid #dfe7e1; border-radius:10px; transition:border-color .16s ease, box-shadow .16s ease; }
-  .search-box:focus-within { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,163,74,.12); }
-  .search-box input { width:100%; min-width:0; height:40px; color:var(--ink); background:transparent; border:0; outline:0; }
-  .search-box input::placeholder { color:#929c96; }
-  .record-count { flex:0 0 auto; color:var(--muted); font-size:13px; font-weight:600; }
-  .table-scroll { width:100%; max-width:100%; overflow-x:auto; overscroll-behavior-inline:contain; }
-  .data-table { width:100%; min-width:940px; border-spacing:0; border-collapse:separate; }
-  .data-table th, .data-table td { padding:14px 16px; border-bottom:1px solid #edf1ee; text-align:left; white-space:nowrap; }
-  .data-table th { position:sticky; top:0; z-index:1; color:#657269; background:#f8faf8; font-size:11px; font-weight:750; letter-spacing:.045em; text-transform:uppercase; }
-  .data-table td { color:#47554c; font-size:13px; }
-  .data-table tbody tr { transition:background .14s ease; }
-  .data-table tbody tr:hover { background:#f7fcf8; }
-  .data-table tbody tr:last-child td { border-bottom:0; }
-  .data-table thead th { border-bottom:2px solid #cfdcd3; }
-  .data-table tbody td { border-bottom:1px solid #dce5df; }
-  .data-table tbody tr:last-child td { border-bottom:1px solid #dce5df; }
-  .cell-strong { color:#1e2c23 !important; font-weight:700; }
-  .cell-muted { color:#7b8880 !important; }
-  .action-cell { display:flex; align-items:center; gap:5px; }
-  .row-action { height:28px; padding:0 8px; border:1px solid; border-radius:6px; font-size:11px; font-weight:750; }
-  .edit-action { color:#14733a; background:#eff9f1; border-color:#bfe8ca; }
-  .edit-action:hover { color:#fff; background:var(--green); border-color:var(--green); }
-  .delete-action { color:#b42318; background:#fff7f6; border-color:#f2c3bf; }
-  .delete-action:hover { color:#fff; background:#c92a22; border-color:#c92a22; }
-  .empty-state { padding:42px 20px; color:var(--muted); text-align:center; }
-  .empty-state p { margin:0; }
-  .pagination { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; padding:16px 20px; border-top:1px solid var(--line); }
-  .page-btn { min-width:34px; height:34px; padding:0 10px; color:#56635b; background:#fff; border:1px solid #dbe4de; border-radius:8px; font-size:13px; font-weight:650; }
-  .page-btn:hover:not(:disabled), .page-btn.active { color:#fff; background:var(--green); border-color:var(--green); }
-  .page-btn:disabled { cursor:not-allowed; opacity:.45; }
-  .dashboard-bottom { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; width:100%; max-width:1240px; margin:18px auto 0; }
-  .category-card { flex:1 1 440px; overflow:hidden; }
-  .category-card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line); }
-  .category-card-header h2, .clean-data-panel h2 { margin:0; font-size:15px; letter-spacing:-.2px; }
-  .category-total { display:grid; min-width:26px; height:24px; padding:0 7px; place-items:center; color:#14733a; background:#dcf7e4; border-radius:999px; font-size:12px; font-weight:750; }
-  .category-list { display:grid; gap:0; max-height:260px; margin:0; padding:0; overflow:auto; list-style:none; }
-  .category-list li { display:flex; align-items:center; justify-content:space-between; gap:14px; min-width:0; padding:10px 16px; border-bottom:1px solid #edf1ee; }
-  .category-list li:last-child { border-bottom:0; }
-  .category-name { overflow:hidden; color:#3b4a40; font-weight:650; text-overflow:ellipsis; white-space:nowrap; }
-  .category-count { flex:0 0 auto; color:var(--muted); font-size:12px; }
-  .category-empty { margin:0; padding:22px 16px; color:var(--muted); font-size:13px; text-align:center; }
-  .clean-data-panel { flex:0 1 280px; min-width:230px; padding:16px; background:#fff; border:1px solid #f0d1cf; border-radius:16px; box-shadow:0 6px 24px rgba(22,35,28,.04); }
-  .clean-data-panel p { margin:7px 0 14px; color:var(--muted); font-size:12px; line-height:1.45; }
-  .clean-data-btn { width:100%; height:38px; color:#b42318; background:#fff; border:1px solid #efb5b0; border-radius:8px; font-size:12px; font-weight:750; }
-  .clean-data-btn:hover:not(:disabled) { color:#fff; background:#c92a22; border-color:#c92a22; }
-  .clean-data-btn:disabled { cursor:wait; opacity:.6; }
-
-  .form-card { padding:24px; }
-  .form-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:18px 20px; }
-  .field { min-width:0; }
-  .field label { display:block; margin:0 0 7px; color:#35443a; font-size:13px; font-weight:700; }
-  .field input { display:block; width:100%; min-width:0; height:44px; padding:0 12px; color:var(--ink); background:#fff; border:1px solid #d7e0da; border-radius:9px; transition:border-color .16s ease, box-shadow .16s ease; }
-  .field input:hover { border-color:#b9c8bd; }
-  .field input:focus { border-color:var(--green); outline:0; box-shadow:0 0 0 3px rgba(22,163,74,.13); }
-  .field input.invalid { border-color:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,.1); }
-  .field-error { display:block; min-height:18px; padding-top:4px; color:#c02424; font-size:12px; }
-  .form-actions { display:flex; gap:10px; margin-top:22px; }
-  .submit-btn { flex:1 1 auto; width:100%; height:48px; margin:0; color:#fff; background:var(--green); border:1px solid var(--green); border-radius:10px; box-shadow:0 5px 12px rgba(22,163,74,.18); font-weight:750; transition:transform .16s ease, background .16s ease, box-shadow .16s ease; }
-  .clear-btn { flex:0 0 auto; min-width:94px; height:48px; padding:0 18px; color:#4c5a51; background:#fff; border:1px solid #cfdad2; border-radius:10px; font-weight:750; transition:background .16s ease, border-color .16s ease, color .16s ease; }
-  .clear-btn:hover { color:#b42318; background:#fff6f5; border-color:#f1b9b4; }
-  .submit-btn:hover:not(:disabled) { background:var(--green-dark); box-shadow:0 7px 16px rgba(22,163,74,.24); transform:translateY(-1px); }
-  .submit-btn:disabled { cursor:wait; opacity:.65; }
-  .pill { display:inline-flex; align-items:center; margin-left:5px; padding:2px 6px; border-radius:999px; font-size:10px; font-weight:750; vertical-align:middle; }
-  .pill-ok { color:#14743a; background:#dcf7e4; } .pill-soon { color:#a65a00; background:#fff1d6; } .pill-expired { color:#ba2020; background:#fee2e2; }
-  .row-new { animation:row-in .35s ease; }
-  @keyframes row-in { from { background:#e5f9ea; } to { background:transparent; } }
-  .toast { position:fixed; z-index:80; right:24px; bottom:24px; max-width:min(380px, calc(100vw - 32px)); padding:13px 16px; color:#fff; border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,.18); font-weight:650; opacity:0; pointer-events:none; transform:translateY(12px); transition:opacity .2s ease, transform .2s ease; }
-  .toast.show { opacity:1; transform:translateY(0); } .toast-success { background:#167a39; } .toast-error { background:#c12b2b; }
-
-  @media (max-width:1200px) { .form-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); } .main-content { padding-inline:24px; } }
-  @media (max-width:900px) { .app-header { padding:0 18px; } .hamburger-btn { display:grid; } .sidebar { width:min(168px, calc(100vw - 56px)); transform:translateX(-100%); box-shadow:8px 0 24px rgba(22,35,28,.12); } .sidebar.collapsed { width:min(168px, calc(100vw - 56px)); } body.sidebar-open .sidebar { transform:translateX(0); } .sidebar .nav-item, .sidebar .collapse-btn, .sidebar.collapsed .nav-item, .sidebar.collapsed .collapse-btn { justify-content:flex-start; padding:0 13px; } .sidebar .nav-label, .sidebar.collapsed .nav-label { width:auto; opacity:1; } .collapse-btn { display:none; } .sidebar-backdrop { position:fixed; z-index:35; inset:var(--header-h) 0 0; background:rgba(14,25,18,.42); opacity:0; pointer-events:none; transition:opacity .24s ease; } body.sidebar-open .sidebar-backdrop { display:block; opacity:1; pointer-events:auto; } .main-content, body.sidebar-collapsed .main-content { margin-left:0; padding:calc(var(--header-h) + 24px) 20px 32px; } .form-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
-  @media (max-width:600px) { .app-header { padding:0 14px; } .brand-mark { width:34px; height:34px; flex-basis:34px; border-radius:10px; } .brand-name { font-size:12px; } .main-content, body.sidebar-collapsed .main-content { padding-inline:14px; } .view-header { margin-bottom:16px; } .table-toolbar { align-items:stretch; flex-direction:column; padding:14px; gap:10px; } .search-box { max-width:none; flex-basis:auto; } .record-count { align-self:flex-end; } .form-card { padding:16px; border-radius:13px; } .form-grid { grid-template-columns:1fr; gap:13px; } .field-error { min-height:16px; } .section-title { margin-top:24px; } .pagination { justify-content:center; padding:13px; } .toast { right:16px; bottom:16px; } }
-  @media (max-width:380px) { .brand-name { max-width:145px; } .main-content, body.sidebar-collapsed .main-content { padding-inline:10px; } .form-card { padding:13px; } }
-
-  /* Keep text within its available space at every viewport size. */
-  .brand-name, .nav-label, .record-count, .field-error, .toast, .empty-state, .data-table td { min-width:0; }
-  .field label, .field-error, .toast, .empty-state p { overflow-wrap:anywhere; }
-  .data-table td { max-width:220px; overflow:hidden; text-overflow:ellipsis; }
-  @media (max-width:600px) {
-    body { font-size:13px; }
-    .nav-item, .collapse-btn { font-size:13px; }
-    .view-header h1 { font-size:24px; }
-    .section-title { font-size:12px; }
-    .field label { font-size:12px; }
-    .field input, .submit-btn { font-size:14px; }
-    .data-table th { font-size:10px; }
-    .data-table td { max-width:170px; padding:12px; font-size:12px; }
-  }
-  @media (max-width:380px) {
-    .brand-name { font-size:15px; }
-    .data-table td { max-width:140px; padding:10px; }
-    .toast { font-size:12px; }
-  }
-
-  /* Responsive table scale, following the system_index contained-table pattern. */
-  .data-table {
-    width:max-content;
-    min-width:0;
-    font-size:calc(var(--table-font-base) * var(--table-zoom) / var(--table-zoom-base));
-    transform:scale(var(--table-zoom));
-    transform-origin:top left;
-  }
-  .data-table th, .data-table td {
-    padding:calc(var(--table-padding-y) * var(--table-zoom) / var(--table-zoom-base)) calc(var(--table-padding-x) * var(--table-zoom) / var(--table-zoom-base));
-  }
-  .data-table th { font-size:calc(var(--table-head-font-base) * var(--table-zoom) / var(--table-zoom-base)); }
-  .data-table td { font-size:inherit; }
-  @media (max-width:900px) { :root { --table-zoom:.90; --table-min-width:900px; } }
-  @media (max-width:600px) { :root { --table-zoom:.80; --table-min-width:820px; --table-padding-x:6px; --table-padding-y:13px; } }
-  @media (max-width:380px) { :root { --table-zoom:.72; --table-min-width:760px; --table-padding-x:6px; --table-padding-y:12px; } }
-
-  /* Compact density: preserve readability while using less vertical space. */
-  .main-content { padding-top:calc(var(--header-h) + 22px); padding-bottom:28px; }
-  .view-header { margin-bottom:16px; }
-  .section-title { margin:22px 0 10px; }
-  .sidebar { padding-top:14px; padding-bottom:10px; }
-  .sidebar-nav { gap:3px; }
-  .nav-item, .collapse-btn { height:44px; }
-  .table-toolbar { padding:13px 16px; }
-  .search-box input { height:36px; }
-  .form-card { padding:18px; }
-  .form-grid { gap:11px 16px; }
-  .field label { margin-bottom:5px; }
-  .field input { height:40px; }
-  .field-error { min-height:14px; padding-top:2px; line-height:1.2; }
-  .form-actions { margin-top:14px; }
-  .submit-btn, .clear-btn { height:44px; }
-  .pagination { padding:11px 16px; }
-  @media (max-width:900px) { .main-content, body.sidebar-collapsed .main-content { padding-top:calc(var(--header-h) + 18px); padding-bottom:24px; } }
-  @media (max-width:600px) { .form-card { padding:14px; } .form-grid { gap:9px; } .table-toolbar { padding:11px; } .section-title { margin-top:18px; } }
-
-  /* Keep all four form columns visible; controls compact instead of stacking. */
-  @media (max-width:1200px) { .form-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
-  @media (max-width:900px) { .form-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; } }
-  @media (max-width:600px) {
-    .form-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; }
-    .field label { min-height:28px; margin-bottom:3px; font-size:clamp(9px, 2.5vw, 12px); line-height:1.12; overflow-wrap:anywhere; }
-    .field input { height:35px; padding:0 5px; font-size:clamp(10px, 2.8vw, 13px); }
-    .field-error { min-height:0; font-size:9px; line-height:1.1; }
-  }
-  @media (max-width:380px) {
-    .form-grid { gap:4px; }
-    .field input { height:32px; padding:0 3px; }
-  }
-  @media (max-width:600px) {
-    .toolbar-controls { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; width:100%; gap:6px; }
-    .filter-control { display:grid; grid-template-columns:auto minmax(0, 1fr); min-width:0; gap:4px; font-size:10px; }
-    .filter-control select { width:100%; min-width:0; max-width:none; height:32px; padding:0 18px 0 6px; font-size:11px; }
-    .export-btn { height:32px; padding:0 7px; font-size:10px; }
-    .record-count { align-self:center; font-size:10px; white-space:nowrap; }
-    .dashboard-bottom { flex-direction:row; gap:8px; margin-top:14px; }
-    .category-card { flex:1 1 0; width:auto; min-width:0; }
-    .clean-data-panel { flex:0 0 118px; width:auto; min-width:0; padding:12px 8px; }
-    .clean-data-panel h2 { font-size:13px; }
-    .clean-data-panel p { font-size:10px; }
-    .clean-data-btn { height:34px; padding:0 5px; font-size:11px; }
-  }
-  @media (max-width:380px) {
-    .toolbar-controls { gap:4px; }
-    .filter-control { gap:2px; font-size:9px; }
-    .filter-control select { padding-left:4px; font-size:10px; }
-    .export-btn { padding:0 5px; font-size:9px; }
-    .record-count { font-size:9px; }
-  }
-
-  /* ============================================
-     THEME TOGGLE (header-right)
-     ============================================ */
-  .theme-toggle-btn { display:flex; flex:0 0 auto; align-items:center; justify-content:center; width:40px; height:40px; color:#18231c; background:transparent; border:0; border-radius:10px; transition:background .16s ease, color .16s ease; }
-  .theme-toggle-btn:hover { background:#eff8f1; }
-  .theme-toggle-btn .icon-sun { display:none; }
-  .theme-toggle-btn svg { display:block; }
-
-  /* ============================================
-     DARK MODE
-     ============================================ */
-  body.dark-mode {
-    --green:#22c55e;
-    --green-dark:#16a34a;
-    --ink:#eaf1ec;
-    --muted:#8b978f;
-    --line:#262f2a;
-    --surface:#151b17;
-    --canvas:#0d1310;
-  }
-  body.dark-mode .theme-toggle-btn { color:#f5f7f6; }
-  body.dark-mode .theme-toggle-btn:hover { background:#1c2420; }
-  body.dark-mode .theme-toggle-btn .icon-moon { display:none; }
-  body.dark-mode .theme-toggle-btn .icon-sun { display:block; }
-
-  body.dark-mode .app-header { background:rgba(21,27,23,.96); box-shadow:0 2px 10px rgba(0,0,0,.4); }
-  body.dark-mode .brand-name { color:#eaf1ec; }
-  body.dark-mode .hamburger-btn { color:#c7d1cb; }
-  body.dark-mode .hamburger-btn:hover { color:#4ade80; background:#1c2420; }
-  body.dark-mode .sidebar { background:#151b17; border-right-color:#262f2a; }
-  body.dark-mode .sidebar-backdrop { background:rgba(0,0,0,.6); }
-  body.dark-mode .nav-item, body.dark-mode .collapse-btn { color:#a3aea7; }
-  body.dark-mode .nav-item:hover, body.dark-mode .collapse-btn:hover { color:#4ade80; background:#1c2420; }
-  body.dark-mode .nav-item.active { color:#4ade80; background:rgba(34,197,94,.16); }
-  body.dark-mode .card { box-shadow:0 6px 24px rgba(0,0,0,.28); }
-  body.dark-mode .filter-control select { color:#dbe6df; background:#1c2420; border-color:#2c3630; }
-  body.dark-mode .export-btn { color:#4ade80; background:rgba(34,197,94,.12); border-color:#2c4633; }
-  body.dark-mode .search-box { color:#8b978f; background:#1c2420; border-color:#2c3630; }
-  body.dark-mode .search-box input { color:#eaf1ec; }
-  body.dark-mode .search-box input::placeholder { color:#6b7871; }
-  body.dark-mode .data-table th { color:#9aa6a0; background:#171f1a; }
-  body.dark-mode .data-table td { color:#c5cec8; }
-  body.dark-mode .data-table tbody tr:hover { background:#181f1b; }
-  body.dark-mode .data-table thead th { border-bottom-color:#2c3630; }
-  body.dark-mode .data-table tbody td { border-bottom-color:#232b26; }
-  body.dark-mode .cell-strong { color:#f1f5f2 !important; }
-  body.dark-mode .cell-muted { color:#7c8983 !important; }
-  body.dark-mode .edit-action { color:#4ade80; background:rgba(34,197,94,.12); border-color:#2c4633; }
-  body.dark-mode .delete-action { color:#f87171; background:rgba(220,38,38,.12); border-color:#4a2723; }
-  body.dark-mode .page-btn { color:#a3aea7; background:#1c2420; border-color:#2c3630; }
-  body.dark-mode .category-name { color:#d6ded9; }
-  body.dark-mode .category-total { color:#4ade80; background:rgba(34,197,94,.16); }
-  body.dark-mode .category-list li { border-bottom-color:#212a25; }
-  body.dark-mode .category-empty { color:#7c8983; }
-  body.dark-mode .clean-data-panel { background:#191513; border-color:#4a2723; }
-  body.dark-mode .clean-data-btn { color:#f87171; background:#1c1614; border-color:#4a2723; }
-  body.dark-mode .field label { color:#a9b4ae; }
-  body.dark-mode .field input { color:#eaf1ec; background:#1c2420; border-color:#2c3630; }
-  body.dark-mode .field input:hover { border-color:#3a4841; }
-  body.dark-mode .clear-btn { color:#c7d1cb; background:#1c2420; border-color:#2c3630; }
-  body.dark-mode .empty-state { color:#7c8983; }
-  body.dark-mode .pill-ok { color:#4ade80; background:rgba(34,197,94,.16); }
-  body.dark-mode .pill-soon { color:#fbbf24; background:rgba(251,191,36,.14); }
-  body.dark-mode .pill-expired { color:#f87171; background:rgba(220,38,38,.16); }
-
-  /* ============================================
-     STORAGE HELP BUTTON + MODAL
-     ============================================ */
-  .storage-help-btn {
-    position:fixed;
-    z-index:60;
-    right:24px;
-    top:60px;
-    display:grid;
-    width:27px;
-    height:27px;
-    place-items:center;
-    color:#fff;
-    background:var(--green);
-    border:0;
-    border-radius:999px;
-    box-shadow:0 8px 20px rgba(22,163,74,.32);
-    font-size:19px;
-    font-weight:800;
-    transition:background .16s ease, transform .16s ease, box-shadow .16s ease;
-  }
-  .storage-help-btn:hover { background:var(--green-dark); box-shadow:0 10px 24px rgba(22,163,74,.4); transform:translateY(-1px); }
-  body.dark-mode .storage-help-btn { box-shadow:0 8px 20px rgba(0,0,0,.5); }
-
-  .storage-modal-backdrop {
-    position:fixed;
-    z-index:90;
-    inset:0;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    background:rgba(14,25,18,.46);
-  }
-  .storage-modal-backdrop.show { display:flex; }
-  .storage-modal {
-    width:100%;
-    max-width:420px;
-    max-height:calc(100vh - 40px);
-    overflow:auto;
-    padding:22px;
-    background:var(--surface);
-    border-radius:16px;
-    box-shadow:0 20px 50px rgba(0,0,0,.28);
-  }
-  footer{
-  	color: #116d32;
-  	font-size:10px;
-  	text-decoration:wavy;
-  	text-align:center;
-  	}
-  .storage-modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
-  .storage-modal-header h2 { margin:0; font-size:17px; letter-spacing:-.2px; }
-  .storage-modal-close { display:grid; width:32px; height:32px; place-items:center; color:var(--muted); background:transparent; border:0; border-radius:8px; font-size:18px; line-height:1; }
-  .storage-modal-close:hover { color:var(--ink); background:#eff8f1; }
-  body.dark-mode .storage-modal-close:hover { background:#1c2420; }
-  .storage-stat-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); }
-  .storage-stat-row:last-of-type { border-bottom:0; }
-  .storage-stat-label { color:var(--muted); font-size:12.5px; font-weight:650; }
-  .storage-stat-value { color:var(--ink); font-size:14px; font-weight:750; text-align:right; }
-  .storage-bar-track { width:100%; height:9px; margin-top:14px; overflow:hidden; background:#e3e9e5; border-radius:999px; }
-  body.dark-mode .storage-bar-track { background:#232b26; }
-  .storage-bar-fill { height:100%; background:var(--green); border-radius:999px; transition:width .4s ease; }
-  .storage-modal-note { margin:14px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
-  .storage-modal-loading { padding:18px 0; color:var(--muted); font-size:13px; text-align:center; }
+:root { --green:#16a34a; --green-dark:#15803d; --ink:#18231c; --muted:#68756d; --line:#e3e9e5; --surface:#fff; --canvas:#f5f7f6; --header-h:70px; --sidebar-w:248px; --sidebar-mini:76px; --table-zoom:1; --table-zoom-base:1; --table-font-base:.82rem; --table-head-font-base:.70rem; --table-padding-x:6px; --table-padding-y:14px; --table-min-width:940px; }
+* { box-sizing:border-box; }
+html { min-width:320px; background:var(--canvas); }
+body { margin:0; min-width:320px; min-height:100vh; overflow-x:hidden; background:var(--canvas); color:var(--ink); font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button, input { font:inherit; }
+button { cursor:pointer; }
+button:focus-visible, input:focus-visible, a:focus-visible { outline:3px solid rgba(22,163,74,.25); outline-offset:2px; }
+.app-header { position:fixed; z-index:50; inset:0 0 auto; height:var(--header-h); display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(255,255,255,.96); border-bottom:1px solid var(--line); box-shadow:0 2px 10px rgba(22,35,28,.05); }
+.header-left, .brand { display:flex; align-items:center; min-width:0; }
+.brand { gap:11px; }
+.brand-mark { display:grid; flex:0 0 38px; width:38px; height:38px; place-items:center; color:#fff; background:var(--green); border-radius:11px; box-shadow:0 6px 14px rgba(22,163,74,.22); cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+#navImportBtn.nav-locked { display:none !important; }
+.brand-name { overflow:hidden; color:#14231a; font-size:18px; font-weight:750; letter-spacing:-.35px; text-overflow:ellipsis; white-space:nowrap; }
+.hamburger-btn { display:none; width:40px; height:40px; margin-right:10px; place-items:center; color:#26382d; background:transparent; border:0; border-radius:10px; }
+.hamburger-btn:hover { background:#eff8f1; color:var(--green-dark); }
+.sidebar { position:fixed; z-index:40; top:var(--header-h); bottom:0; left:0; display:flex; flex-direction:column; width:var(--sidebar-w); padding:20px 12px 14px; overflow:hidden; background:#fff; border-right:1px solid var(--line); transition:width .24s ease, transform .24s ease; }
+.sidebar-nav { display:grid; gap:6px; }
+.nav-item, .collapse-btn { display:flex; align-items:center; gap:13px; width:100%; min-width:0; height:48px; padding:0 13px; color:#56635b; text-decoration:none; background:transparent; border:0; border-radius:10px; font-weight:650; text-align:left; white-space:nowrap; transition:background .16s ease, color .16s ease; }
+.nav-item:hover, .collapse-btn:hover { color:var(--green-dark); background:#eff9f1; }
+.nav-item.active { color:#116d32; background:#dcf7e4; }
+.nav-icon { display:grid; flex:0 0 22px; width:22px; height:22px; place-items:center; }
+.nav-label { overflow:hidden; text-overflow:clip; }
+.collapse-btn { margin-top:auto; }
+.sidebar.collapsed { width:var(--sidebar-mini); }
+.sidebar.collapsed .nav-item, .sidebar.collapsed .collapse-btn { justify-content:center; padding:0; }
+.sidebar.collapsed .nav-label { width:0; opacity:0; }
+.sidebar.collapsed .collapse-btn svg { transform:rotate(180deg); }
+.sidebar-backdrop { display:none; }
+.main-content { min-width:0; min-height:100vh; margin-left:var(--sidebar-w); padding:calc(var(--header-h) + 32px) 32px 40px; transition:margin-left .24s ease; }
+body.sidebar-collapsed .main-content { margin-left:var(--sidebar-mini); }
+.view { width:min(100%, 1440px); margin:0 auto; }
+.view[hidden] { display:none !important; }
+.view-header { margin:0 0 22px; }
+.view-header h1 { margin:0; font-size:clamp(24px, 2.2vw, 30px); line-height:1.2; letter-spacing:-.75px; }
+.section-title { margin:30px 0 14px; font-size:18px; letter-spacing:-.25px; }
+.card { min-width:0; background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:0 6px 24px rgba(22,35,28,.055); }
+.table-card { overflow:hidden; }
+#view-dashboard .table-card { width:100%; max-width:1240px; margin-inline:auto; }
+.table-toolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 20px; border-bottom:1px solid var(--line); }
+.toolbar-controls { display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0; }
+.filter-control { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; }
+.filter-control select { height:36px; max-width:155px; padding:0 28px 0 9px; color:#405047; background:#fff; border:1px solid #d7e0da; border-radius:8px; outline:0; }
+.filter-control select:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,163,74,.12); }
+.export-btn { flex:0 0 auto; height:36px; padding:0 12px; color:#14733a; background:#eff9f1; border:1px solid #bfe8ca; border-radius:8px; font-size:12px; font-weight:750; white-space:nowrap; }
+.export-btn:hover { color:#fff; background:var(--green); border-color:var(--green); }
+.search-box { display:flex; align-items:center; flex:1 1 300px; max-width:440px; min-width:0; gap:9px; padding:0 12px; color:#7a8780; background:#f8faf8; border:1px solid #dfe7e1; border-radius:10px; transition:border-color .16s ease, box-shadow .16s ease; }
+.search-box:focus-within { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,163,74,.12); }
+.search-box input { width:100%; min-width:0; height:40px; color:var(--ink); background:transparent; border:0; outline:0; }
+.search-box input::placeholder { color:#929c96; }
+.record-count { flex:0 0 auto; color:var(--muted); font-size:13px; font-weight:600; }
+.table-scroll { width:100%; max-width:100%; overflow-x:auto; overscroll-behavior-inline:contain; }
+.data-table { width:100%; min-width:940px; border-spacing:0; border-collapse:separate; }
+.data-table th, .data-table td { padding:14px 16px; border-bottom:1px solid #edf1ee; text-align:left; white-space:nowrap; }
+.data-table th { position:sticky; top:0; z-index:1; color:#657269; background:#f8faf8; font-size:11px; font-weight:750; letter-spacing:.045em; text-transform:uppercase; }
+.data-table td { color:#47554c; font-size:13px; }
+.data-table tbody tr { transition:background .14s ease; }
+.data-table tbody tr:hover { background:#f7fcf8; }
+.data-table tbody tr:last-child td { border-bottom:0; }
+.data-table thead th { border-bottom:2px solid #cfdcd3; }
+.data-table tbody td { border-bottom:1px solid #dce5df; }
+.data-table tbody tr:last-child td { border-bottom:1px solid #dce5df; }
+.cell-strong { color:#1e2c23 !important; font-weight:700; }
+.cell-muted { color:#7b8880 !important; }
+.action-cell { display:flex; align-items:center; gap:5px; }
+.row-action { height:28px; padding:0 8px; border:1px solid; border-radius:6px; font-size:11px; font-weight:750; }
+.edit-action { color:#14733a; background:#eff9f1; border-color:#bfe8ca; }
+.edit-action:hover { color:#fff; background:var(--green); border-color:var(--green); }
+.delete-action { color:#b42318; background:#fff7f6; border-color:#f2c3bf; }
+.delete-action:hover { color:#fff; background:#c92a22; border-color:#c92a22; }
+.empty-state { padding:42px 20px; color:var(--muted); text-align:center; }
+.empty-state p { margin:0; }
+.pagination { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; padding:16px 20px; border-top:1px solid var(--line); }
+.page-btn { min-width:34px; height:34px; padding:0 10px; color:#56635b; background:#fff; border:1px solid #dbe4de; border-radius:8px; font-size:13px; font-weight:650; }
+.page-btn:hover:not(:disabled), .page-btn.active { color:#fff; background:var(--green); border-color:var(--green); }
+.page-btn:disabled { cursor:not-allowed; opacity:.45; }
+.dashboard-bottom { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; width:100%; max-width:1240px; margin:18px auto 0; }
+.category-card { flex:1 1 440px; overflow:hidden; }
+.category-card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line); }
+.category-card-header h2, .clean-data-panel h2 { margin:0; font-size:15px; letter-spacing:-.2px; }
+.category-total { display:grid; min-width:26px; height:24px; padding:0 7px; place-items:center; color:#14733a; background:#dcf7e4; border-radius:999px; font-size:12px; font-weight:750; }
+.category-list { display:grid; gap:0; max-height:260px; margin:0; padding:0; overflow:auto; list-style:none; }
+.category-list li { display:flex; align-items:center; justify-content:space-between; gap:14px; min-width:0; padding:10px 16px; border-bottom:1px solid #edf1ee; }
+.category-list li:last-child { border-bottom:0; }
+.category-name { overflow:hidden; color:#3b4a40; font-weight:650; text-overflow:ellipsis; white-space:nowrap; }
+.category-count { flex:0 0 auto; color:var(--muted); font-size:12px; }
+.category-empty { margin:0; padding:22px 16px; color:var(--muted); font-size:13px; text-align:center; }
+.clean-data-panel { flex:0 1 280px; min-width:230px; padding:16px; background:#fff; border:1px solid #f0d1cf; border-radius:16px; box-shadow:0 6px 24px rgba(22,35,28,.04); }
+.clean-data-panel p { margin:7px 0 14px; color:var(--muted); font-size:12px; line-height:1.45; }
+.clean-data-btn { width:100%; height:38px; color:#b42318; background:#fff; border:1px solid #efb5b0; border-radius:8px; font-size:12px; font-weight:750; }
+.clean-data-btn:hover:not(:disabled) { color:#fff; background:#c92a22; border-color:#c92a22; }
+.clean-data-btn:disabled { cursor:wait; opacity:.6; }
+.form-card { padding:24px; }
+.form-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:18px 20px; }
+.field { min-width:0; }
+.field label { display:block; margin:0 0 7px; color:#35443a; font-size:13px; font-weight:700; }
+.field input { display:block; width:100%; min-width:0; height:44px; padding:0 12px; color:var(--ink); background:#fff; border:1px solid #d7e0da; border-radius:9px; transition:border-color .16s ease, box-shadow .16s ease; }
+.field input:hover { border-color:#b9c8bd; }
+.field input:focus { border-color:var(--green); outline:0; box-shadow:0 0 0 3px rgba(22,163,74,.13); }
+.field input.invalid { border-color:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,.1); }
+.field-error { display:block; min-height:18px; padding-top:4px; color:#c02424; font-size:12px; }
+.form-actions { display:flex; gap:10px; margin-top:22px; }
+.submit-btn { flex:1 1 auto; width:100%; height:48px; margin:0; color:#fff; background:var(--green); border:1px solid var(--green); border-radius:10px; box-shadow:0 5px 12px rgba(22,163,74,.18); font-weight:750; transition:transform .16s ease, background .16s ease, box-shadow .16s ease; }
+.clear-btn { flex:0 0 auto; min-width:94px; height:48px; padding:0 18px; color:#4c5a51; background:#fff; border:1px solid #cfdad2; border-radius:10px; font-weight:750; transition:background .16s ease, border-color .16s ease, color .16s ease; }
+.clear-btn:hover { color:#b42318; background:#fff6f5; border-color:#f1b9b4; }
+.submit-btn:hover:not(:disabled) { background:var(--green-dark); box-shadow:0 7px 16px rgba(22,163,74,.24); transform:translateY(-1px); }
+.submit-btn:disabled { cursor:wait; opacity:.65; }
+.pill { display:inline-flex; align-items:center; margin-left:5px; padding:2px 6px; border-radius:999px; font-size:10px; font-weight:750; vertical-align:middle; }
+.pill-ok { color:#14743a; background:#dcf7e4; }
+.pill-soon { color:#a65a00; background:#fff1d6; }
+.pill-expired { color:#ba2020; background:#fee2e2; }
+.row-new { animation:row-in .35s ease; }
+@keyframes row-in { from { background:#e5f9ea; } to { background:transparent; } }
+.toast { position:fixed; z-index:80; right:24px; bottom:24px; max-width:min(380px, calc(100vw - 32px)); padding:13px 16px; color:#fff; border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,.18); font-weight:650; opacity:0; pointer-events:none; transform:translateY(12px); transition:opacity .2s ease, transform .2s ease; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast-success { background:#167a39; }
+.toast-error { background:#c12b2b; }
+@media (max-width:1200px) { .form-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); } .main-content { padding-inline:24px; } }
+@media (max-width:900px) { .app-header { padding:0 18px; } .hamburger-btn { display:grid; } .sidebar { width:min(168px, calc(100vw - 56px)); transform:translateX(-100%); box-shadow:8px 0 24px rgba(22,35,28,.12); } .sidebar.collapsed { width:min(168px, calc(100vw - 56px)); } body.sidebar-open .sidebar { transform:translateX(0); } .sidebar .nav-item, .sidebar .collapse-btn, .sidebar.collapsed .nav-item, .sidebar.collapsed .collapse-btn { justify-content:flex-start; padding:0 13px; } .sidebar .nav-label, .sidebar.collapsed .nav-label { width:auto; opacity:1; } .collapse-btn { display:none; } .sidebar-backdrop { position:fixed; z-index:35; inset:var(--header-h) 0 0; background:rgba(14,25,18,.42); opacity:0; pointer-events:none; transition:opacity .24s ease; } body.sidebar-open .sidebar-backdrop { display:block; opacity:1; pointer-events:auto; } .main-content, body.sidebar-collapsed .main-content { margin-left:0; padding:calc(var(--header-h) + 24px) 20px 32px; } .form-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+@media (max-width:600px) { .app-header { padding:0 14px; } .brand-mark { width:34px; height:34px; flex-basis:34px; border-radius:10px; } .brand-name { font-size:12px; } .main-content, body.sidebar-collapsed .main-content { padding-inline:14px; } .view-header { margin-bottom:16px; } .table-toolbar { align-items:stretch; flex-direction:column; padding:14px; gap:10px; } .search-box { max-width:none; flex-basis:auto; } .record-count { align-self:flex-end; } .form-card { padding:16px; border-radius:13px; } .form-grid { grid-template-columns:1fr; gap:13px; } .field-error { min-height:16px; } .section-title { margin-top:24px; } .pagination { justify-content:center; padding:13px; } .toast { right:16px; bottom:16px; } }
+@media (max-width:380px) { .brand-name { max-width:145px; } .main-content, body.sidebar-collapsed .main-content { padding-inline:10px; } .form-card { padding:13px; } }
+.brand-name, .nav-label, .record-count, .field-error, .toast, .empty-state, .data-table td { min-width:0; }
+.field label, .field-error, .toast, .empty-state p { overflow-wrap:anywhere; }
+.data-table td { max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:600px) { body { font-size:13px; } .nav-item, .collapse-btn { font-size:13px; } .view-header h1 { font-size:24px; } .section-title { font-size:12px; } .field label { font-size:12px; } .field input, .submit-btn { font-size:14px; } .data-table th { font-size:10px; } .data-table td { max-width:170px; padding:12px; font-size:12px; } }
+@media (max-width:380px) { .brand-name { font-size:15px; } .data-table td { max-width:140px; padding:10px; } .toast { font-size:12px; } }
+.data-table { width:max-content; min-width:0; font-size:calc(var(--table-font-base) * var(--table-zoom) / var(--table-zoom-base)); transform:scale(var(--table-zoom)); transform-origin:top left; }
+.data-table th, .data-table td { padding:calc(var(--table-padding-y) * var(--table-zoom) / var(--table-zoom-base)) calc(var(--table-padding-x) * var(--table-zoom) / var(--table-zoom-base)); }
+.data-table th { font-size:calc(var(--table-head-font-base) * var(--table-zoom) / var(--table-zoom-base)); }
+.data-table td { font-size:inherit; }
+@media (max-width:900px) { :root { --table-zoom:.90; --table-min-width:900px; } }
+@media (max-width:600px) { :root { --table-zoom:.80; --table-min-width:820px; --table-padding-x:6px; --table-padding-y:13px; } }
+@media (max-width:380px) { :root { --table-zoom:.72; --table-min-width:760px; --table-padding-x:6px; --table-padding-y:12px; } }
+.main-content { padding-top:calc(var(--header-h) + 22px); padding-bottom:28px; }
+.view-header { margin-bottom:16px; }
+.section-title { margin:22px 0 10px; }
+.sidebar { padding-top:14px; padding-bottom:10px; }
+.sidebar-nav { gap:3px; }
+.nav-item, .collapse-btn { height:44px; }
+.table-toolbar { padding:13px 16px; }
+.search-box input { height:36px; }
+.form-card { padding:18px; }
+.form-grid { gap:11px 16px; }
+.field label { margin-bottom:5px; }
+.field input { height:40px; }
+.field-error { min-height:14px; padding-top:2px; line-height:1.2; }
+.form-actions { margin-top:14px; }
+.submit-btn, .clear-btn { height:44px; }
+.pagination { padding:11px 16px; }
+@media (max-width:900px) { .main-content, body.sidebar-collapsed .main-content { padding-top:calc(var(--header-h) + 18px); padding-bottom:24px; } }
+@media (max-width:600px) { .form-card { padding:14px; } .form-grid { gap:9px; } .table-toolbar { padding:11px; } .section-title { margin-top:18px; } }
+@media (max-width:1200px) { .form-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+@media (max-width:900px) { .form-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; } }
+@media (max-width:600px) { .form-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; } .field label { min-height:28px; margin-bottom:3px; font-size:clamp(9px, 2.5vw, 12px); line-height:1.12; overflow-wrap:anywhere; } .field input { height:35px; padding:0 5px; font-size:clamp(10px, 2.8vw, 13px); } .field-error { min-height:0; font-size:9px; line-height:1.1; } }
+@media (max-width:380px) { .form-grid { gap:4px; } .field input { height:32px; padding:0 3px; } }
+@media (max-width:600px) { .toolbar-controls { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; width:100%; gap:6px; } .filter-control { display:grid; grid-template-columns:auto minmax(0, 1fr); min-width:0; gap:4px; font-size:10px; } .filter-control select { width:100%; min-width:0; max-width:none; height:32px; padding:0 18px 0 6px; font-size:11px; } .export-btn { height:32px; padding:0 7px; font-size:10px; } .record-count { align-self:center; font-size:10px; white-space:nowrap; } .dashboard-bottom { flex-direction:row; gap:8px; margin-top:14px; } .category-card { flex:1 1 0; width:auto; min-width:0; } .clean-data-panel { flex:0 0 118px; width:auto; min-width:0; padding:12px 8px; } .clean-data-panel h2 { font-size:13px; } .clean-data-panel p { font-size:10px; } .clean-data-btn { height:34px; padding:0 5px; font-size:11px; } }
+@media (max-width:380px) { .toolbar-controls { gap:4px; } .filter-control { gap:2px; font-size:9px; } .filter-control select { padding-left:4px; font-size:10px; } .export-btn { padding:0 5px; font-size:9px; } .record-count { font-size:9px; } }
+.theme-toggle-btn { display:flex; flex:0 0 auto; align-items:center; justify-content:center; width:40px; height:40px; color:#18231c; background:transparent; border:0; border-radius:10px; transition:background .16s ease, color .16s ease; }
+.theme-toggle-btn:hover { background:#eff8f1; }
+.theme-toggle-btn .icon-sun { display:none; }
+.theme-toggle-btn svg { display:block; }
+body.dark-mode { --green:#22c55e; --green-dark:#16a34a; --ink:#eaf1ec; --muted:#8b978f; --line:#262f2a; --surface:#151b17; --canvas:#0d1310; }
+body.dark-mode .theme-toggle-btn { color:#f5f7f6; }
+body.dark-mode .theme-toggle-btn:hover { background:#1c2420; }
+body.dark-mode .theme-toggle-btn .icon-moon { display:none; }
+body.dark-mode .theme-toggle-btn .icon-sun { display:block; }
+body.dark-mode .app-header { background:rgba(21,27,23,.96); box-shadow:0 2px 10px rgba(0,0,0,.4); }
+body.dark-mode .brand-name { color:#eaf1ec; }
+body.dark-mode .hamburger-btn { color:#c7d1cb; }
+body.dark-mode .hamburger-btn:hover { color:#4ade80; background:#1c2420; }
+body.dark-mode .sidebar { background:#151b17; border-right-color:#262f2a; }
+body.dark-mode .sidebar-backdrop { background:rgba(0,0,0,.6); }
+body.dark-mode .nav-item, body.dark-mode .collapse-btn { color:#a3aea7; }
+body.dark-mode .nav-item:hover, body.dark-mode .collapse-btn:hover { color:#4ade80; background:#1c2420; }
+body.dark-mode .nav-item.active { color:#4ade80; background:rgba(34,197,94,.16); }
+body.dark-mode .card { box-shadow:0 6px 24px rgba(0,0,0,.28); }
+body.dark-mode .filter-control select { color:#dbe6df; background:#1c2420; border-color:#2c3630; }
+body.dark-mode .export-btn { color:#4ade80; background:rgba(34,197,94,.12); border-color:#2c4633; }
+body.dark-mode .search-box { color:#8b978f; background:#1c2420; border-color:#2c3630; }
+body.dark-mode .search-box input { color:#eaf1ec; }
+body.dark-mode .search-box input::placeholder { color:#6b7871; }
+body.dark-mode .data-table th { color:#9aa6a0; background:#171f1a; }
+body.dark-mode .data-table td { color:#c5cec8; }
+body.dark-mode .data-table tbody tr:hover { background:#181f1b; }
+body.dark-mode .data-table thead th { border-bottom-color:#2c3630; }
+body.dark-mode .data-table tbody td { border-bottom-color:#232b26; }
+body.dark-mode .cell-strong { color:#f1f5f2 !important; }
+body.dark-mode .cell-muted { color:#7c8983 !important; }
+body.dark-mode .edit-action { color:#4ade80; background:rgba(34,197,94,.12); border-color:#2c4633; }
+body.dark-mode .delete-action { color:#f87171; background:rgba(220,38,38,.12); border-color:#4a2723; }
+body.dark-mode .page-btn { color:#a3aea7; background:#1c2420; border-color:#2c3630; }
+body.dark-mode .category-name { color:#d6ded9; }
+body.dark-mode .category-total { color:#4ade80; background:rgba(34,197,94,.16); }
+body.dark-mode .category-list li { border-bottom-color:#212a25; }
+body.dark-mode .category-empty { color:#7c8983; }
+body.dark-mode .clean-data-panel { background:#191513; border-color:#4a2723; }
+body.dark-mode .clean-data-btn { color:#f87171; background:#1c1614; border-color:#4a2723; }
+body.dark-mode .field label { color:#a9b4ae; }
+body.dark-mode .field input { color:#eaf1ec; background:#1c2420; border-color:#2c3630; }
+body.dark-mode .field input:hover { border-color:#3a4841; }
+body.dark-mode .clear-btn { color:#c7d1cb; background:#1c2420; border-color:#2c3630; }
+body.dark-mode .empty-state { color:#7c8983; }
+body.dark-mode .pill-ok { color:#4ade80; background:rgba(34,197,94,.16); }
+body.dark-mode .pill-soon { color:#fbbf24; background:rgba(251,191,36,.14); }
+body.dark-mode .pill-expired { color:#f87171; background:rgba(220,38,38,.16); }
+.storage-help-btn { position:fixed; z-index:60; right:24px; top:60px; display:grid; width:27px; height:27px; place-items:center; color:#fff; background:var(--green); border:0; border-radius:999px; box-shadow:0 8px 20px rgba(22,163,74,.32); font-size:19px; font-weight:800; transition:background .16s ease, transform .16s ease, box-shadow .16s ease; }
+.storage-help-btn:hover { background:var(--green-dark); box-shadow:0 10px 24px rgba(22,163,74,.4); transform:translateY(-1px); }
+body.dark-mode .storage-help-btn { box-shadow:0 8px 20px rgba(0,0,0,.5); }
+.storage-modal-backdrop { position:fixed; z-index:90; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(14,25,18,.46); }
+.storage-modal-backdrop.show { display:flex; }
+.storage-modal { width:100%; max-width:420px; max-height:calc(100vh - 40px); overflow:auto; padding:22px; background:var(--surface); border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,.28); }
+footer{ color: #116d32; font-size:10px; text-decoration:wavy; text-align:center; }
+.storage-modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.storage-modal-header h2 { margin:0; font-size:17px; letter-spacing:-.2px; }
+.storage-modal-close { display:grid; width:32px; height:32px; place-items:center; color:var(--muted); background:transparent; border:0; border-radius:8px; font-size:18px; line-height:1; }
+.storage-modal-close:hover { color:var(--ink); background:#eff8f1; }
+body.dark-mode .storage-modal-close:hover { background:#1c2420; }
+.storage-stat-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); }
+.storage-stat-row:last-of-type { border-bottom:0; }
+.storage-stat-label { color:var(--muted); font-size:12.5px; font-weight:650; }
+.storage-stat-value { color:var(--ink); font-size:14px; font-weight:750; text-align:right; }
+.storage-bar-track { width:100%; height:9px; margin-top:14px; overflow:hidden; background:#e3e9e5; border-radius:999px; }
+body.dark-mode .storage-bar-track { background:#232b26; }
+.storage-bar-fill { height:100%; background:var(--green); border-radius:999px; transition:width .4s ease; }
+.storage-modal-note { margin:14px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+.storage-modal-loading { padding:18px 0; color:var(--muted); font-size:13px; text-align:center; }
+.login-modal { width:100%; max-width:380px; }
+.login-modal-note { margin:0 0 16px; color:var(--muted); font-size:12.5px; line-height:1.5; }
+.login-field { margin-bottom:14px; }
+.login-field label { display:block; margin:0 0 6px; color:#35443a; font-size:13px; font-weight:700; }
+.login-field input { display:block; width:100%; height:44px; padding:0 12px; color:var(--ink); background:#fff; border:1px solid #d7e0da; border-radius:9px; }
+.login-field input:focus { border-color:var(--green); outline:0; box-shadow:0 0 0 3px rgba(22,163,74,.13); }
+.login-field input.invalid { border-color:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,.1); }
+.login-error { display:block; min-height:18px; margin-top:2px; color:#c02424; font-size:12px; }
+.login-submit-btn { width:100%; height:46px; margin-top:6px; color:#fff; background:var(--green); border:1px solid var(--green); border-radius:10px; font-weight:750; }
+.login-submit-btn:hover:not(:disabled) { background:var(--green-dark); }
+.login-submit-btn:disabled { cursor:wait; opacity:.65; }
+body.dark-mode .login-field label { color:#a9b4ae; }
+body.dark-mode .login-field input { color:#eaf1ec; background:#1c2420; border-color:#2c3630; }
+.import-toolbar-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:18px 20px; border-bottom:1px solid var(--line); }
+.import-add-btn { flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 14px; color:#fff; background:var(--green); border:1px solid var(--green); border-radius:8px; font-size:12px; font-weight:750; white-space:nowrap; }
+.import-add-btn:hover:not(:disabled) { background:var(--green-dark); }
+.import-add-btn:disabled { cursor:wait; opacity:.65; }
+.import-history-controls { display:flex; align-items:center; gap:6px; }
+.import-history-btn { display:grid; place-items:center; width:34px; height:34px; color:#56635b; background:#fff; border:1px solid #dbe4de; border-radius:8px; }
+.import-history-btn:hover:not(:disabled) { color:#fff; background:var(--green); border-color:var(--green); }
+.import-history-btn:disabled { cursor:not-allowed; opacity:.4; }
+body.dark-mode .import-history-btn { color:#a3aea7; background:#1c2420; border-color:#2c3630; }
+.import-bottom { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; width:100%; max-width:1240px; margin:18px auto 0; }
+.import-tables-card { flex:1 1 440px; overflow:hidden; }
+.import-table-item { display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; padding:10px 16px; border-bottom:1px solid #edf1ee; cursor:pointer; transition:background .14s ease; }
+.import-table-item:last-child { border-bottom:0; }
+.import-table-item:hover { background:#f7fcf8; }
+.import-table-item.active { background:#dcf7e4; }
+.import-table-name { overflow:hidden; min-width:0; color:#3b4a40; font-weight:650; text-overflow:ellipsis; white-space:nowrap; }
+.import-table-meta { flex:0 0 auto; display:flex; align-items:center; gap:8px; }
+.import-table-count { color:var(--muted); font-size:12px; }
+.import-table-toggle { display:grid; place-items:center; width:24px; height:24px; color:#14733a; background:#eff9f1; border:1px solid #bfe8ca; border-radius:6px; }
+.import-table-toggle:hover { color:#fff; background:var(--green); border-color:var(--green); }
+.import-table-toggle.is-hidden { color:#8a8f8c; background:#f2f3f2; border-color:#dfe3e0; }
+.import-table-toggle.is-hidden:hover { color:#fff; background:#68756d; border-color:#68756d; }
+.import-table-item.table-hidden { opacity:.55; }
+body.dark-mode .import-table-toggle { color:#4ade80; background:rgba(34,197,94,.12); border-color:#2c4633; }
+body.dark-mode .import-table-toggle.is-hidden { color:#8b978f; background:#1c2420; border-color:#2c3630; }
+.import-table-remove { display:grid; place-items:center; width:24px; height:24px; color:#b42318; background:#fff7f6; border:1px solid #f2c3bf; border-radius:6px; font-size:13px; line-height:1; }
+.import-table-remove:hover { color:#fff; background:#c92a22; border-color:#c92a22; }
+body.dark-mode .import-table-item:hover { background:#181f1b; }
+body.dark-mode .import-table-item.active { background:rgba(34,197,94,.16); }
+body.dark-mode .import-table-name { color:#d6ded9; }
+body.dark-mode .import-table-remove { color:#f87171; background:rgba(220,38,38,.12); border-color:#4a2723; }
+.import-source-badge { display:inline-flex; max-width:130px; overflow:hidden; padding:2px 7px; color:#14733a; background:#eff9f1; border-radius:999px; font-size:10px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle; }
+body.dark-mode .import-source-badge { color:#4ade80; background:rgba(34,197,94,.12); }
+@media (max-width:600px) { .import-bottom { flex-direction:row; gap:8px; } .import-tables-card { flex:1 1 0; width:auto; min-width:0; } .import-toolbar-row { padding:13px; } }
+.import-tables-header-controls { display:flex; align-items:center; gap:8px; }
+.import-showall-btn { flex:0 0 auto; height:26px; padding:0 10px; color:#56635b; background:#fff; border:1px solid #dbe4de; border-radius:999px; font-size:11px; font-weight:750; white-space:nowrap; }
+.import-showall-btn:hover { color:#fff; background:var(--green); border-color:var(--green); }
+.import-showall-btn.active { color:#fff; background:var(--green); border-color:var(--green); }
+body.dark-mode .import-showall-btn { color:#a3aea7; background:#1c2420; border-color:#2c3630; }
+body.dark-mode .import-showall-btn.active { color:#0d1310; background:#4ade80; border-color:#4ade80; }
 </style>
 </head>
 <body>
-
-  <!-- HEADER -->
-  <header class="app-header">
-    <div class="header-left">
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Fungua menyu">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 7l9-4 9 4-9 4-9-4z"/>
-            <path d="M3 7v10l9 4 9-4V7"/>
-            <path d="M12 11v10"/>
-          </svg>
-        </span>
-        <span class="brand-name">Chap-Record</span>
-      </div>
-    </div>
-    <div class="header-right">
-      <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Badilisha mandhari" aria-pressed="false">
-        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
-        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4.5"/>
-          <line x1="12" y1="2.5" x2="12" y2="5"/>
-          <line x1="12" y1="19" x2="12" y2="21.5"/>
-          <line x1="4.2" y1="4.2" x2="6" y2="6"/>
-          <line x1="18" y1="18" x2="19.8" y2="19.8"/>
-          <line x1="2.5" y1="12" x2="5" y2="12"/>
-          <line x1="19" y1="12" x2="21.5" y2="12"/>
-          <line x1="4.2" y1="19.8" x2="6" y2="18"/>
-          <line x1="18" y1="6" x2="19.8" y2="4.2"/>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- SIDEBAR BACKDROP (mobile) -->
-  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <nav class="sidebar-nav">
-      <a href="#dashboard" class="nav-item" data-route="dashboard">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-        </span>
-        <span class="nav-label">Dashboard</span>
-      </a>
-      <a href="#wekamkeka" class="nav-item" data-route="wekamkeka">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
-        </span>
-        <span class="nav-label">WekaMkeka</span>
-      </a>
-    </nav>
-
-    <button class="collapse-btn" id="collapseBtn" aria-label="Punguza menyu">
-      <svg width="8" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      <span class="nav-label">Punguza</span>
-    </button>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="main-content" id="mainContent">
-
-    <!-- DASHBOARD VIEW -->
-    <section class="view" id="view-dashboard">
-      <div class="view-header">
-        <h1>Dashboard</h1>
-      </div>
-
-      <div class="card table-card">
-        <div class="table-toolbar">
-          <div class="search-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="dashboardSearch" placeholder="Tafuta bidhaa, aina, barcode..." autocomplete="off" />
-          </div>
-          <div class="toolbar-controls">
-            <label class="filter-control" for="dashboardFilter">
-              <span>Filter by</span>
-              <select id="dashboardFilter" aria-label="Filter dashboard records by column">
-                <option value="all">All columns</option>
-                <option value="id">ID</option>
-                <option value="jinaBidhaa">Jina la Bidhaa</option>
-                <option value="aina">Aina</option>
-                <option value="kipimo">Kipimo</option>
-                <option value="idadi">Idadi</option>
-                <option value="beiNunua">Bei Nunua</option>
-                <option value="beiRejareja">Bei Rejareja</option>
-                <option value="beiJumla">Bei Jumla</option>
-                <option value="expiry">Expiry</option>
-                <option value="barcode">Barcode</option>
-              </select>
-            </label>
-            <button type="button" class="export-btn" id="exportCsvBtn">Export Excel</button>
-            <span class="record-count" id="recordCount">Rekodi 0</span>
-          </div>
-        </div>
-
-        <div class="table-scroll">
-          <table class="data-table" id="dashboardTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Jina la Bidhaa</th>
-                <th>Aina</th>
-                <th>Kipimo</th>
-                <th>Idadi</th>
-                <th>Bei Nunua</th>
-                <th>Bei Rejareja</th>
-                <th>Bei Jumla</th>
-                <th>Expiry</th>
-                <th>Barcode</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="dashboardTableBody">
-            </tbody>
-          </table>
-          <div class="empty-state" id="dashboardEmptyState" hidden>
-            <p>Hakuna rekodi zilizopatikana.</p>
-          </div>
-        </div>
-
-        <div class="pagination" id="dashboardPagination"></div>
-      </div>
-
-      <div class="dashboard-bottom">
-        <section class="card category-card" aria-labelledby="categoriesTitle">
-          <div class="category-card-header">
-            <h2 id="categoriesTitle">Aina za Bidhaa</h2>
-            <span class="category-total" id="dashboardCategoryTotal">0</span>
-          </div>
-          <ul class="category-list" id="categoryList"></ul>
-        </section>
-
-        <aside class="clean-data-panel">
-          <h2>Data Management</h2>
-          <p>Futa rekodi zote zilizohifadhiwa kwenye kifaa hiki.</p>
-          <button type="button" class="clean-data-btn" id="cleanDataBtn">Clean Data</button>
-        </aside>
-      </div>
-    </section>
-
-    <!-- WEKAMKEKA VIEW -->
-    <section class="view" id="view-wekamkeka" hidden>
-      <div class="view-header">
-        <h1>WekaMkeka</h1>
-      </div>
-
-      <div class="card form-card">
-        <form id="productForm" novalidate>
-          <div class="form-grid">
-
-            <div class="field">
-              <label for="f-jinaBidhaa">Jina la Bidhaa</label>
-              <input type="text" id="f-jinaBidhaa" name="jinaBidhaa" data-order="0" />
-              <span class="field-error" id="err-jinaBidhaa"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-aina">Aina</label>
-              <input type="text" id="f-aina" name="aina" data-order="1" />
-              <span class="field-error" id="err-aina"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-kipimo">Kipimo</label>
-              <input type="text" id="f-kipimo" name="kipimo" data-order="2" />
-              <span class="field-error" id="err-kipimo"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-idadi">Idadi</label>
-              <input type="number" id="f-idadi" name="idadi" data-order="3" step="any" />
-              <span class="field-error" id="err-idadi"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-beiNunua">Bei Nunua</label>
-              <input type="number" id="f-beiNunua" name="beiNunua" data-order="4" step="any" />
-              <span class="field-error" id="err-beiNunua"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-beiRejareja">Bei Rejareja</label>
-              <input type="number" id="f-beiRejareja" name="beiRejareja" data-order="5" step="any" />
-              <span class="field-error" id="err-beiRejareja"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-beiJumla">Bei Jumla</label>
-              <input type="number" id="f-beiJumla" name="beiJumla" data-order="6" step="any" />
-              <span class="field-error" id="err-beiJumla"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-expiry">Expiry</label>
-              <input type="text" id="f-expiry" name="expiry" data-order="7" placeholder="e.g. 2026-12-31, N/A, Never" />
-              <span class="field-error" id="err-expiry"></span>
-            </div>
-
-            <div class="field">
-              <label for="f-barcode">Barcode</label>
-              <input type="text" id="f-barcode" name="barcode" data-order="8" />
-              <span class="field-error" id="err-barcode"></span>
-            </div>
-
-          </div>
-
-          <div class="form-actions">
-            <button type="button" class="clear-btn" id="clearBtn">Clear</button>
-            <button type="submit" class="submit-btn" id="submitBtn" data-order="9">Submit</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="section-title" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-        <h2 style="margin:0;">Latest Records</h2>
-        <span class="category-total" id="latestCategoryTotal">0</span>
-      </div>
-
-      <div class="card table-card">
-        <div class="table-scroll">
-          <table class="data-table" id="latestTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Jina la Bidhaa</th>
-                <th>Aina</th>
-                <th>Kipimo</th>
-                <th>Idadi</th>
-                <th>Bei Nunua</th>
-                <th>Bei Rejareja</th>
-                <th>Bei Jumla</th>
-                <th>Expiry</th>
-                <th>Barcode</th>
-              </tr>
-            </thead>
-            <tbody id="latestTableBody">
-            </tbody>
-          </table>
-          <div class="empty-state" id="latestEmptyState" hidden>
-            <p>Bado hakuna rekodi. Jaza fomu hapo juu kuanza.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- STORAGE HELP BUTTON -->
-  <button type="button" class="storage-help-btn" id="storageHelpBtn" aria-haspopup="dialog" aria-controls="storageModal" title="Angalia nafasi ya kuhifadhi rekodi">?</button>
-
-  <!-- STORAGE MODAL -->
-  <div class="storage-modal-backdrop" id="storageModalBackdrop">
-    <div class="storage-modal" id="storageModal" role="dialog" aria-modal="true" aria-labelledby="storageModalTitle">
-      <div class="storage-modal-header">
-        <h2 id="storageModalTitle">Nafasi ya Kuhifadhi Data</h2>
-        <button type="button" class="storage-modal-close" id="storageModalClose" aria-label="Funga">&times;</button>
-      </div>
-      <div id="storageModalBody">
-        <p class="storage-modal-loading">Inakokotoa nafasi ya hifadhi...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOAST -->
-  <div class="toast" id="toast"></div>
-  <footer>unicot save the day</footer>
-
-  <script>
-/* ============================================
-   db.js — IndexedDB layer for Chap-Record
-   Database: chap_record_db
-   Store: products (autoIncrement id)
-   ============================================ */
-
+<header class="app-header">
+<div class="header-left">
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Fungua menyu">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="brand">
+<span class="brand-mark" aria-hidden="true">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M3 7l9-4 9 4-9 4-9-4z"/>
+<path d="M3 7v10l9 4 9-4V7"/>
+<path d="M12 11v10"/>
+</svg>
+</span>
+<span class="brand-name">Chap-Record</span>
+</div>
+</div>
+<div class="header-right">
+<button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Badilisha mandhari" aria-pressed="false">
+<svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+</svg>
+<svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="4.5"/>
+<line x1="12" y1="2.5" x2="12" y2="5"/>
+<line x1="12" y1="19" x2="12" y2="21.5"/>
+<line x1="4.2" y1="4.2" x2="6" y2="6"/>
+<line x1="18" y1="18" x2="19.8" y2="19.8"/>
+<line x1="2.5" y1="12" x2="5" y2="12"/>
+<line x1="19" y1="12" x2="21.5" y2="12"/>
+<line x1="4.2" y1="19.8" x2="6" y2="18"/>
+<line x1="18" y1="6" x2="19.8" y2="4.2"/>
+</svg>
+</button>
+</div>
+</header>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<a href="#dashboard" class="nav-item" data-route="dashboard">
+<span class="nav-icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+</span>
+<span class="nav-label">Dashboard</span>
+</a>
+<a href="#wekamkeka" class="nav-item" data-route="wekamkeka">
+<span class="nav-icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+</span>
+<span class="nav-label">WekaMkeka</span>
+</a>
+<a href="#import" class="nav-item nav-locked" data-route="import" id="navImportBtn">
+<span class="nav-icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+</span>
+<span class="nav-label">Import Data</span>
+</a>
+</nav>
+<button class="collapse-btn" id="collapseBtn" aria-label="Punguza menyu">
+<svg width="8" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+<span class="nav-label">Punguza</span>
+</button>
+</aside>
+<main class="main-content" id="mainContent">
+<section class="view" id="view-dashboard">
+<div class="view-header">
+<h1>Dashboard</h1>
+</div>
+<div class="card table-card">
+<div class="table-toolbar">
+<div class="search-box">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+<input type="text" id="dashboardSearch" placeholder="Tafuta bidhaa, aina, barcode..." autocomplete="off" />
+</div>
+<div class="toolbar-controls">
+<label class="filter-control" for="dashboardFilter">
+<span>Filter by</span>
+<select id="dashboardFilter" aria-label="Filter dashboard records by column">
+<option value="all">All columns</option>
+<option value="id">ID</option>
+<option value="jinaBidhaa">Jina la Bidhaa</option>
+<option value="aina">Aina</option>
+<option value="kipimo">Kipimo</option>
+<option value="idadi">Idadi</option>
+<option value="beiNunua">Bei Nunua</option>
+<option value="beiRejareja">Bei Rejareja</option>
+<option value="beiJumla">Bei Jumla</option>
+<option value="expiry">Expiry</option>
+<option value="barcode">Barcode</option>
+</select>
+</label>
+<button type="button" class="export-btn" id="exportCsvBtn">Export Excel</button>
+<span class="record-count" id="recordCount">Rekodi 0</span>
+</div>
+</div>
+<div class="table-scroll">
+<table class="data-table" id="dashboardTable">
+<thead>
+<tr>
+<th>ID</th>
+<th>Jina la Bidhaa</th>
+<th>Aina</th>
+<th>Kipimo</th>
+<th>Idadi</th>
+<th>Bei Nunua</th>
+<th>Bei Rejareja</th>
+<th>Bei Jumla</th>
+<th>Expiry</th>
+<th>Barcode</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="dashboardTableBody">
+</tbody>
+</table>
+<div class="empty-state" id="dashboardEmptyState" hidden>
+<p>Hakuna rekodi zilizopatikana.</p>
+</div>
+</div>
+<div class="pagination" id="dashboardPagination"></div>
+</div>
+<div class="dashboard-bottom">
+<section class="card category-card" aria-labelledby="categoriesTitle">
+<div class="category-card-header">
+<h2 id="categoriesTitle">Aina za Bidhaa</h2>
+<span class="category-total" id="dashboardCategoryTotal">0</span>
+</div>
+<ul class="category-list" id="categoryList"></ul>
+</section>
+<aside class="clean-data-panel">
+<h2>Data Management</h2>
+<p>Futa rekodi zote zilizohifadhiwa kwenye kifaa hiki.</p>
+<button type="button" class="clean-data-btn" id="cleanDataBtn">Clean Data</button>
+</aside>
+</div>
+</section>
+<section class="view" id="view-wekamkeka" hidden>
+<div class="view-header">
+<h1>WekaMkeka</h1>
+</div>
+<div class="card form-card">
+<form id="productForm" novalidate>
+<div class="form-grid">
+<div class="field">
+<label for="f-jinaBidhaa">Jina la Bidhaa</label>
+<input type="text" id="f-jinaBidhaa" name="jinaBidhaa" data-order="0" />
+<span class="field-error" id="err-jinaBidhaa"></span>
+</div>
+<div class="field">
+<label for="f-aina">Aina</label>
+<input type="text" id="f-aina" name="aina" data-order="1" />
+<span class="field-error" id="err-aina"></span>
+</div>
+<div class="field">
+<label for="f-kipimo">Kipimo</label>
+<input type="text" id="f-kipimo" name="kipimo" data-order="2" />
+<span class="field-error" id="err-kipimo"></span>
+</div>
+<div class="field">
+<label for="f-idadi">Idadi</label>
+<input type="number" id="f-idadi" name="idadi" data-order="3" step="any" />
+<span class="field-error" id="err-idadi"></span>
+</div>
+<div class="field">
+<label for="f-beiNunua">Bei Nunua</label>
+<input type="number" id="f-beiNunua" name="beiNunua" data-order="4" step="any" />
+<span class="field-error" id="err-beiNunua"></span>
+</div>
+<div class="field">
+<label for="f-beiRejareja">Bei Rejareja</label>
+<input type="number" id="f-beiRejareja" name="beiRejareja" data-order="5" step="any" />
+<span class="field-error" id="err-beiRejareja"></span>
+</div>
+<div class="field">
+<label for="f-beiJumla">Bei Jumla</label>
+<input type="number" id="f-beiJumla" name="beiJumla" data-order="6" step="any" />
+<span class="field-error" id="err-beiJumla"></span>
+</div>
+<div class="field">
+<label for="f-expiry">Expiry</label>
+<input type="text" id="f-expiry" name="expiry" data-order="7" placeholder="e.g. 2026-12-31, N/A, Never" />
+<span class="field-error" id="err-expiry"></span>
+</div>
+<div class="field">
+<label for="f-barcode">Barcode</label>
+<input type="text" id="f-barcode" name="barcode" data-order="8" />
+<span class="field-error" id="err-barcode"></span>
+</div>
+</div>
+<div class="form-actions">
+<button type="button" class="clear-btn" id="clearBtn">Clear</button>
+<button type="submit" class="submit-btn" id="submitBtn" data-order="9">Submit</button>
+</div>
+</form>
+</div>
+<div class="section-title" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+<h2 style="margin:0;">Latest Records</h2>
+<span class="category-total" id="latestCategoryTotal">0</span>
+</div>
+<div class="card table-card">
+<div class="table-scroll">
+<table class="data-table" id="latestTable">
+<thead>
+<tr>
+<th>ID</th>
+<th>Jina la Bidhaa</th>
+<th>Aina</th>
+<th>Kipimo</th>
+<th>Idadi</th>
+<th>Bei Nunua</th>
+<th>Bei Rejareja</th>
+<th>Bei Jumla</th>
+<th>Expiry</th>
+<th>Barcode</th>
+</tr>
+</thead>
+<tbody id="latestTableBody">
+</tbody>
+</table>
+<div class="empty-state" id="latestEmptyState" hidden>
+<p>Bado hakuna rekodi. Jaza fomu hapo juu kuanza.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="view" id="view-import" hidden>
+<div class="view-header">
+<h1>Import Data</h1>
+</div>
+<div id="importMainPanel">
+<div class="card table-card">
+<div class="import-toolbar-row">
+<button type="button" class="import-add-btn" id="importAddBtn">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+Ongeza Faili
+</button>
+<button type="button" class="import-add-btn" id="importAddRecordBtn" style="background:#fff;color:#14733a;border-color:#bfe8ca;">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+Ongeza Rekodi
+</button>
+<input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" multiple hidden />
+<div class="import-history-controls">
+<button type="button" class="import-history-btn" id="importUndoBtn" title="Undo" disabled>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5A5.5 5.5 0 0 1 20 14.5v0A5.5 5.5 0 0 1 14.5 20H11"/></svg>
+</button>
+<button type="button" class="import-history-btn" id="importRedoBtn" title="Redo" disabled>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg>
+</button>
+</div>
+</div>
+<div class="table-toolbar">
+<div class="search-box">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+<input type="text" id="importSearch" placeholder="Tafuta bidhaa, aina, barcode..." autocomplete="off" />
+</div>
+<div class="toolbar-controls">
+<label class="filter-control" for="importFilter">
+<span>Filter by</span>
+<select id="importFilter" aria-label="Filter imported records by column">
+<option value="all">All columns</option>
+<option value="id">ID</option>
+<option value="jinaBidhaa">Jina la Bidhaa</option>
+<option value="aina">Aina</option>
+<option value="kipimo">Kipimo</option>
+<option value="idadi">Idadi</option>
+<option value="beiNunua">Bei Nunua</option>
+<option value="beiRejareja">Bei Rejareja</option>
+<option value="beiJumla">Bei Jumla</option>
+<option value="expiry">Expiry</option>
+<option value="barcode">Barcode</option>
+</select>
+</label>
+<button type="button" class="export-btn" id="importExportBtn">Export Excel</button>
+<span class="record-count" id="importRecordCount">Rekodi 0</span>
+</div>
+</div>
+<div class="table-scroll">
+<table class="data-table" id="importTable">
+<thead>
+<tr>
+<th>ID</th>
+<th>Jina la Bidhaa</th>
+<th>Aina</th>
+<th>Kipimo</th>
+<th>Idadi</th>
+<th>Bei Nunua</th>
+<th>Bei Rejareja</th>
+<th>Bei Jumla</th>
+<th>Expiry</th>
+<th>Barcode</th>
+<th>Chanzo</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="importTableBody">
+</tbody>
+</table>
+<div class="empty-state" id="importEmptyState" hidden>
+<p>Hakuna rekodi zilizoingizwa. Bofya "Ongeza Faili" kuanza.</p>
+</div>
+</div>
+<div class="pagination" id="importPagination"></div>
+</div>
+<div class="import-bottom">
+<section class="card import-tables-card" aria-labelledby="importTablesTitle">
+<div class="category-card-header">
+<h2 id="importTablesTitle">Faili Zilizoingizwa</h2>
+<div class="import-tables-header-controls">
+<button type="button" class="import-showall-btn active" id="importShowAllBtn">Zote</button>
+<span class="category-total" id="importTablesTotal">0</span>
+</div>
+</div>
+<ul class="category-list" id="importTablesList"></ul>
+</section>
+<aside class="clean-data-panel">
+<h2>Data Management</h2>
+<p>Futa rekodi zote za Import zilizohifadhiwa kwenye kifaa hiki.</p>
+<button type="button" class="clean-data-btn" id="importCleanDataBtn">Clean Data</button>
+</aside>
+</div>
+</div>
+<div id="importAddRecordPanel" hidden>
+<div class="view-header" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+<div>
+<h1 style="margin:0; font-size:22px;">Ongeza Rekodi</h1>
+<p style="margin:4px 0 0; color:var(--muted); font-size:13px;" id="importAddRecordTarget"></p>
+</div>
+<button type="button" class="clear-btn" id="importAddRecordBackBtn">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+Rudi
+</button>
+</div>
+<div class="card form-card">
+<form id="importAddRecordForm" novalidate>
+<div class="form-grid">
+<div class="field">
+<label for="ir-jinaBidhaa">Jina la Bidhaa</label>
+<input type="text" id="ir-jinaBidhaa" name="jinaBidhaa" />
+<span class="field-error" id="ir-err-jinaBidhaa"></span>
+</div>
+<div class="field">
+<label for="ir-aina">Aina</label>
+<input type="text" id="ir-aina" name="aina" />
+<span class="field-error" id="ir-err-aina"></span>
+</div>
+<div class="field">
+<label for="ir-kipimo">Kipimo</label>
+<input type="text" id="ir-kipimo" name="kipimo" />
+<span class="field-error" id="ir-err-kipimo"></span>
+</div>
+<div class="field">
+<label for="ir-idadi">Idadi</label>
+<input type="number" id="ir-idadi" name="idadi" step="any" />
+<span class="field-error" id="ir-err-idadi"></span>
+</div>
+<div class="field">
+<label for="ir-beiNunua">Bei Nunua</label>
+<input type="number" id="ir-beiNunua" name="beiNunua" step="any" />
+<span class="field-error" id="ir-err-beiNunua"></span>
+</div>
+<div class="field">
+<label for="ir-beiRejareja">Bei Rejareja</label>
+<input type="number" id="ir-beiRejareja" name="beiRejareja" step="any" />
+<span class="field-error" id="ir-err-beiRejareja"></span>
+</div>
+<div class="field">
+<label for="ir-beiJumla">Bei Jumla</label>
+<input type="number" id="ir-beiJumla" name="beiJumla" step="any" />
+<span class="field-error" id="ir-err-beiJumla"></span>
+</div>
+<div class="field">
+<label for="ir-expiry">Expiry</label>
+<input type="text" id="ir-expiry" name="expiry" placeholder="e.g. 2026-12-31, N/A, Never" />
+<span class="field-error" id="ir-err-expiry"></span>
+</div>
+<div class="field">
+<label for="ir-barcode">Barcode</label>
+<input type="text" id="ir-barcode" name="barcode" />
+<span class="field-error" id="ir-err-barcode"></span>
+</div>
+</div>
+<div class="form-actions">
+<button type="button" class="clear-btn" id="importAddRecordClearBtn">Clear</button>
+<button type="submit" class="submit-btn" id="importAddRecordSubmitBtn">Hifadhi Rekodi</button>
+</div>
+</form>
+</div>
+</div>
+</section>
+</main>
+<button type="button" class="storage-help-btn" id="storageHelpBtn" aria-haspopup="dialog" aria-controls="storageModal" title="Angalia nafasi ya kuhifadhi rekodi">?</button>
+<div class="storage-modal-backdrop" id="storageModalBackdrop">
+<div class="storage-modal" id="storageModal" role="dialog" aria-modal="true" aria-labelledby="storageModalTitle">
+<div class="storage-modal-header">
+<h2 id="storageModalTitle">Nafasi ya Kuhifadhi Data</h2>
+<button type="button" class="storage-modal-close" id="storageModalClose" aria-label="Funga">&times;</button>
+</div>
+<div id="storageModalBody">
+<p class="storage-modal-loading">Inakokotoa nafasi ya hifadhi...</p>
+</div>
+</div>
+</div>
+<div class="storage-modal-backdrop" id="loginModalBackdrop">
+<div class="storage-modal login-modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+<div class="storage-modal-header">
+<h2 id="loginModalTitle">Ingia Kufikia Import Data</h2>
+<button type="button" class="storage-modal-close" id="loginModalClose" aria-label="Funga">&times;</button>
+</div>
+<p class="login-modal-note">Tafadhali weka taarifa zako za kuingia kufikia sehemu ya Import Data.</p>
+<form id="loginForm" novalidate>
+<div class="login-field">
+<label for="loginEmail">Email</label>
+<input type="email" id="loginEmail" autocomplete="off" />
+</div>
+<div class="login-field">
+<label for="loginPassword">Password</label>
+<input type="password" id="loginPassword" autocomplete="off" />
+</div>
+<span class="login-error" id="loginError"></span>
+<button type="submit" class="login-submit-btn" id="loginSubmitBtn">Ingia</button>
+</form>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<footer>unicot save the day</footer>
+<script>
 const ChapDB = (() => {
   const DB_NAME = "chap_record_db";
   const DB_VERSION = 1;
   const STORE_NAME = "products";
-
   let dbInstance = null;
-
   function openDB() {
     if (dbInstance) return Promise.resolve(dbInstance);
-
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
-
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, {
-            keyPath: "id",
-            autoIncrement: true,
-          });
+          const store = db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
           store.createIndex("createdAt", "createdAt", { unique: false });
           store.createIndex("barcode", "barcode", { unique: false });
         }
       };
-
-      request.onsuccess = (event) => {
-        dbInstance = event.target.result;
-        resolve(dbInstance);
-      };
-
-      request.onerror = (event) => {
-        reject(event.target.error || new Error("Imeshindwa kufungua IndexedDB"));
-      };
+      request.onsuccess = (event) => { dbInstance = event.target.result; resolve(dbInstance); };
+      request.onerror = (event) => { reject(event.target.error || new Error("Imeshindwa kufungua IndexedDB")); };
     });
   }
-
   async function addRecord(record) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -680,21 +741,16 @@ const ChapDB = (() => {
       const store = tx.objectStore(STORE_NAME);
       const payload = { ...record, createdAt: new Date().toISOString() };
       const req = store.add(payload);
-
-      req.onsuccess = () => {
-        resolve({ ...payload, id: req.result });
-      };
+      req.onsuccess = () => { resolve({ ...payload, id: req.result }); };
       req.onerror = () => reject(req.error);
     });
   }
-
   async function getAllRecords() {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const req = store.getAll();
-
       req.onsuccess = () => {
         const records = req.result || [];
         records.sort((a, b) => (b.id || 0) - (a.id || 0));
@@ -703,7 +759,6 @@ const ChapDB = (() => {
       req.onerror = () => reject(req.error);
     });
   }
-
   async function clearAllRecords() {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -714,7 +769,6 @@ const ChapDB = (() => {
       tx.onabort = () => reject(tx.error || new Error("Imeshindwa kufuta rekodi"));
     });
   }
-
   async function updateRecord(id, record) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -723,10 +777,7 @@ const ChapDB = (() => {
       const getRequest = store.get(id);
       getRequest.onsuccess = () => {
         const existing = getRequest.result;
-        if (!existing) {
-          reject(new Error("Rekodi haijapatikana"));
-          return;
-        }
+        if (!existing) { reject(new Error("Rekodi haijapatikana")); return; }
         const updated = { ...existing, ...record, id, createdAt: existing.createdAt };
         const saveRequest = store.put(updated);
         saveRequest.onsuccess = () => resolve(updated);
@@ -735,7 +786,6 @@ const ChapDB = (() => {
       getRequest.onerror = () => reject(getRequest.error);
     });
   }
-
   async function deleteRecord(id) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -746,66 +796,42 @@ const ChapDB = (() => {
       tx.onabort = () => reject(tx.error || new Error("Imeshindwa kufuta rekodi"));
     });
   }
-
-  return {
-    openDB,
-    addRecord,
-    getAllRecords,
-    clearAllRecords,
-    updateRecord,
-    deleteRecord,
-  };
+  return { openDB, addRecord, getAllRecords, clearAllRecords, updateRecord, deleteRecord };
 })();
-/* ============================================
-   utils.js — shared helper functions
-   ============================================ */
 
 const ChapUtils = (() => {
-
   function debounce(fn, delay = 250) {
     let timer = null;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
   }
-
   function formatNumber(value) {
     const num = Number(value);
     if (Number.isNaN(num)) return "-";
     return num.toLocaleString("en-US", { maximumFractionDigits: 2 });
   }
-
   function formatDate(isoString) {
     if (!isoString) return "-";
     const d = new Date(isoString);
     if (Number.isNaN(d.getTime())) return isoString;
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   }
-
   function formatDateTime(isoString) {
     if (!isoString) return "-";
     const d = new Date(isoString);
     if (Number.isNaN(d.getTime())) return isoString;
-    return d.toLocaleString("en-GB", {
-      day: "2-digit", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
+    return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
-
   function expiryStatus(expiryDateStr) {
     if (!expiryDateStr) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const expiry = new Date(expiryDateStr);
     if (Number.isNaN(expiry.getTime())) return null;
-
     const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return { label: "Imeisha", cls: "pill-expired" };
     if (diffDays <= 30) return { label: `Siku ${diffDays}`, cls: "pill-soon" };
     return { label: "Sawa", cls: "pill-ok" };
   }
-
   function escapeHtml(str) {
     if (str === null || str === undefined) return "";
     return String(str)
@@ -815,7 +841,6 @@ const ChapUtils = (() => {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
-
   let toastTimer = null;
   function showToast(message, type = "success") {
     const toast = document.getElementById("toast");
@@ -823,64 +848,61 @@ const ChapUtils = (() => {
     toast.textContent = message;
     toast.className = `toast show toast-${type}`;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toast.classList.remove("show");
-    }, 2600);
+    toastTimer = setTimeout(() => { toast.classList.remove("show"); }, 2600);
   }
-
-  return {
-    debounce,
-    formatNumber,
-    formatDate,
-    formatDateTime,
-    expiryStatus,
-    escapeHtml,
-    showToast,
-  };
+  async function downloadAndShareWorkbook(wb, filename) {
+    const xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([wbout], { type: xlsxMime });
+    // 1. Save the file to the device the normal way (Downloads folder).
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    // 2. If the device supports sharing files (most Android/iOS browsers), offer
+    // the native share sheet so the same file can be sent to WhatsApp, etc.
+    try {
+      const file = new File([blob], filename, { type: xlsxMime });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+      }
+    } catch (err) {
+      // AbortError just means the user closed the share sheet — the file is
+      // already downloaded, so there's nothing to warn about.
+      if (err && err.name !== "AbortError") { showToast("Imeshindwa kufungua chaguzi za kushiriki", "error"); }
+    }
+  }
+  return { debounce, formatNumber, formatDate, formatDateTime, expiryStatus, escapeHtml, showToast, downloadAndShareWorkbook };
 })();
-/* ============================================
-   sidebar.js — collapsible sidebar + mobile overlay
-   ============================================ */
 
 const ChapSidebar = (() => {
   const MOBILE_BREAKPOINT = 900;
-
   let sidebarEl, hamburgerBtn, collapseBtn, backdrop;
-
-  function isMobile() {
-    return window.innerWidth <= MOBILE_BREAKPOINT;
+  function isMobile() { return window.innerWidth <= MOBILE_BREAKPOINT; }
+  function blurActiveInput() {
+    const active = document.activeElement;
+    if (active && typeof active.blur === "function" && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT")) {
+      active.blur();
+    }
   }
-
-  function openMobileDrawer() {
-    document.body.classList.add("sidebar-open");
-  }
-
-  function closeMobileDrawer() {
-    document.body.classList.remove("sidebar-open");
-  }
-
-  function toggleMobileDrawer() {
-    document.body.classList.toggle("sidebar-open");
-  }
-
+  function openMobileDrawer() { blurActiveInput(); document.body.classList.add("sidebar-open"); }
+  function closeMobileDrawer() { document.body.classList.remove("sidebar-open"); }
+  function toggleMobileDrawer() { blurActiveInput(); document.body.classList.toggle("sidebar-open"); }
   function toggleDesktopCollapse(force) {
     const shouldCollapse = typeof force === "boolean" ? force : !document.body.classList.contains("sidebar-collapsed");
     document.body.classList.toggle("sidebar-collapsed", shouldCollapse);
     sidebarEl.classList.toggle("collapsed", shouldCollapse);
-
     if (collapseBtn) {
       const label = collapseBtn.querySelector(".nav-label");
-      if (label) {
-        label.textContent = shouldCollapse ? "Buka" : "Punguza";
-      }
+      if (label) { label.textContent = shouldCollapse ? "Buka" : "Punguza"; }
       collapseBtn.setAttribute("aria-expanded", String(!shouldCollapse));
     }
-
-    if (hamburgerBtn) {
-      hamburgerBtn.setAttribute("aria-expanded", String(shouldCollapse ? false : true));
-    }
+    if (hamburgerBtn) { hamburgerBtn.setAttribute("aria-expanded", String(shouldCollapse ? false : true)); }
   }
-
   function setActiveRoute(route) {
     document.querySelectorAll(".nav-item").forEach((item) => {
       const isActive = item.dataset.route === route;
@@ -888,171 +910,79 @@ const ChapSidebar = (() => {
       item.setAttribute("aria-current", isActive ? "page" : "false");
     });
   }
-
   function init() {
     sidebarEl = document.getElementById("sidebar");
     hamburgerBtn = document.getElementById("hamburgerBtn");
     collapseBtn = document.getElementById("collapseBtn");
     backdrop = document.getElementById("sidebarBackdrop");
-
-    hamburgerBtn.addEventListener("click", () => {
-      if (isMobile()) {
-        toggleMobileDrawer();
-      } else {
-        toggleDesktopCollapse();
-      }
-    });
-
-    collapseBtn.addEventListener("click", () => {
-      if (isMobile()) {
-        closeMobileDrawer();
-      } else {
-        toggleDesktopCollapse();
-      }
-    });
-
+    hamburgerBtn.addEventListener("click", () => { if (isMobile()) { toggleMobileDrawer(); } else { toggleDesktopCollapse(); } });
+    collapseBtn.addEventListener("click", () => { if (isMobile()) { closeMobileDrawer(); } else { toggleDesktopCollapse(); } });
     backdrop.addEventListener("click", closeMobileDrawer);
-
-    document.querySelectorAll(".nav-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        if (isMobile()) closeMobileDrawer();
-      });
-    });
-
+    document.querySelectorAll(".nav-item").forEach((item) => { item.addEventListener("click", () => { if (isMobile()) closeMobileDrawer(); }); });
     window.addEventListener("resize", ChapUtils.debounce(() => {
-      if (isMobile()) {
-        closeMobileDrawer();
-      } else {
-        closeMobileDrawer();
-        toggleDesktopCollapse(document.body.classList.contains("sidebar-collapsed"));
-      }
+      if (isMobile()) { closeMobileDrawer(); }
+      else { closeMobileDrawer(); toggleDesktopCollapse(document.body.classList.contains("sidebar-collapsed")); }
     }, 150));
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && document.body.classList.contains("sidebar-open")) {
-        closeMobileDrawer();
-      }
-    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.classList.contains("sidebar-open")) { closeMobileDrawer(); } });
   }
-
   return { init, setActiveRoute };
 })();
-/* ============================================
-   form.js — WekaMkeka form logic
-   ============================================ */
 
 const ChapForm = (() => {
-  const FIELD_ORDER = [
-    "jinaBidhaa", "aina", "kipimo", "idadi",
-    "beiNunua", "beiRejareja", "beiJumla", "expiry", "barcode",
-  ];
+  const FIELD_ORDER = ["jinaBidhaa", "aina", "kipimo", "idadi", "beiNunua", "beiRejareja", "beiJumla", "expiry", "barcode"];
   const LATEST_LIMIT = 10;
-
   let formEl, submitBtn, clearBtn, orderedEls, latestCategoryTotalEl, editingId = null, pendingEditRecord = null, initialized = false;
-
-  function el(name) {
-    return document.getElementById(`f-${name}`);
-  }
-  function errEl(name) {
-    return document.getElementById(`err-${name}`);
-  }
-
-  function buildOrderedElements() {
-    orderedEls = FIELD_ORDER.map((name) => el(name)).concat([submitBtn]);
-  }
-
-  function focusFirstField() {
-    el(FIELD_ORDER[0]).focus();
-  }
-
+  function el(name) { return document.getElementById(`f-${name}`); }
+  function errEl(name) { return document.getElementById(`err-${name}`); }
+  function buildOrderedElements() { orderedEls = FIELD_ORDER.map((name) => el(name)).concat([submitBtn]); }
+  function focusFirstField() { el(FIELD_ORDER[0]).focus(); }
   function handleEnterKey(e) {
     if (e.key !== "Enter") return;
     e.preventDefault();
     const currentIndex = orderedEls.indexOf(e.target);
     if (currentIndex === -1) return;
-
-    if (currentIndex < orderedEls.length - 1) {
-      orderedEls[currentIndex + 1].focus();
-    } else {
-      formEl.requestSubmit ? formEl.requestSubmit() : submitBtn.click();
-    }
+    if (currentIndex < orderedEls.length - 1) { orderedEls[currentIndex + 1].focus(); }
+    else { formEl.requestSubmit ? formEl.requestSubmit() : submitBtn.click(); }
   }
-
   function clearErrors() {
-    FIELD_ORDER.forEach((name) => {
-      el(name).classList.remove("invalid");
-      errEl(name).textContent = "";
-    });
+    FIELD_ORDER.forEach((name) => { el(name).classList.remove("invalid"); errEl(name).textContent = ""; });
   }
-
   function validate() {
     clearErrors();
     let firstInvalid = null;
     let valid = true;
-
     FIELD_ORDER.forEach((name) => {
       const input = el(name);
       const value = input.value.trim();
       let message = "";
-
-      if (value === "") {
-        message = "Sehemu hii inahitajika";
-      } else if (input.type === "number" && Number.isNaN(Number(value))) {
-        message = "Weka namba sahihi";
-      } else if (input.type === "number" && Number(value) < 0) {
-        message = "Namba haiwezi kuwa hasi";
-      } else if (name === "expiry") {
+      if (value === "") { message = "Sehemu hii inahitajika"; }
+      else if (input.type === "number" && Number.isNaN(Number(value))) { message = "Weka namba sahihi"; }
+      else if (input.type === "number" && Number(value) < 0) { message = "Namba haiwezi kuwa hasi"; }
+      else if (name === "expiry") {
         const lower = value.toLowerCase();
         const isDateLike = /^\d{4}-\d{2}-\d{2}$/.test(value);
         const isTextValue = ["n/a", "na", "never", "no expiry", "does not expire", "haina mwisho", "-"].includes(lower);
-        if (!isDateLike && !isTextValue) {
-          message = "Weka tarehe au andika N/A/Never/-";
-        }
+        if (!isDateLike && !isTextValue) { message = "Weka tarehe au andika N/A/Never/-"; }
       }
-
-      if (message) {
-        valid = false;
-        input.classList.add("invalid");
-        errEl(name).textContent = message;
-        if (!firstInvalid) firstInvalid = input;
-      }
+      if (message) { valid = false; input.classList.add("invalid"); errEl(name).textContent = message; if (!firstInvalid) firstInvalid = input; }
     });
-
     if (!valid && firstInvalid) firstInvalid.focus();
     return valid;
   }
-
   function collectFormData() {
     const data = {};
-    FIELD_ORDER.forEach((name) => {
-      const input = el(name);
-      data[name] = input.type === "number" ? Number(input.value) : input.value.trim();
-    });
+    FIELD_ORDER.forEach((name) => { const input = el(name); data[name] = input.type === "number" ? Number(input.value) : input.value.trim(); });
     return data;
   }
-
-  function resetForm() {
-    formEl.reset();
-    clearErrors();
-    editingId = null;
-    submitBtn.textContent = "Submit";
-  }
-
-  function handleClear() {
-    resetForm();
-    focusFirstField();
-  }
-
+  function resetForm() { formEl.reset(); clearErrors(); editingId = null; submitBtn.textContent = "Submit"; }
+  function handleClear() { resetForm(); focusFirstField(); }
   function enterEditMode(record) {
-    FIELD_ORDER.forEach((name) => {
-      el(name).value = record[name] ?? "";
-    });
+    FIELD_ORDER.forEach((name) => { el(name).value = record[name] ?? ""; });
     clearErrors();
     editingId = record.id;
     submitBtn.textContent = "Update Record";
     focusFirstField();
   }
-
   function renderLatestRow(record) {
     const tr = document.createElement("tr");
     tr.className = "row-new";
@@ -1071,198 +1001,107 @@ const ChapForm = (() => {
     `;
     return tr;
   }
-
   function prependLatestRow(record) {
     const tbody = document.getElementById("latestTableBody");
     const emptyState = document.getElementById("latestEmptyState");
     emptyState.hidden = true;
     tbody.prepend(renderLatestRow(record));
-
-    while (tbody.children.length > LATEST_LIMIT) {
-      tbody.removeChild(tbody.lastElementChild);
-    }
-
-    if (latestCategoryTotalEl) {
-      latestCategoryTotalEl.textContent = String(Math.min(tbody.children.length, LATEST_LIMIT));
-    }
+    while (tbody.children.length > LATEST_LIMIT) { tbody.removeChild(tbody.lastElementChild); }
+    if (latestCategoryTotalEl) { latestCategoryTotalEl.textContent = String(Math.min(tbody.children.length, LATEST_LIMIT)); }
   }
-
   async function loadLatestRecords() {
     const tbody = document.getElementById("latestTableBody");
     const emptyState = document.getElementById("latestEmptyState");
     tbody.innerHTML = "";
-
     try {
       const records = await ChapDB.getAllRecords();
       const latest = records.slice(0, LATEST_LIMIT);
       emptyState.hidden = latest.length > 0;
       latest.forEach((record) => tbody.appendChild(renderLatestRow(record)));
-      if (latestCategoryTotalEl) {
-        latestCategoryTotalEl.textContent = String(latest.length);
-      }
-    } catch (err) {
-      ChapUtils.showToast("Imeshindwa kupakia rekodi", "error");
-    }
+      if (latestCategoryTotalEl) { latestCategoryTotalEl.textContent = String(latest.length); }
+    } catch (err) { ChapUtils.showToast("Imeshindwa kupakia rekodi", "error"); }
   }
-
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!validate()) {
-      ChapUtils.showToast("Tafadhali jaza sehemu zote kwa usahihi", "error");
-      return;
-    }
-
+    if (!validate()) { ChapUtils.showToast("Tafadhali jaza sehemu zote kwa usahihi", "error"); return; }
     submitBtn.disabled = true;
     try {
       const data = collectFormData();
       const isEditing = Boolean(editingId);
-      const record = isEditing
-        ? await ChapDB.updateRecord(editingId, data)
-        : await ChapDB.addRecord(data);
-      if (isEditing) {
-        await loadLatestRecords();
-      } else {
-        prependLatestRow(record);
-      }
+      const record = isEditing ? await ChapDB.updateRecord(editingId, data) : await ChapDB.addRecord(data);
+      if (isEditing) { await loadLatestRecords(); } else { prependLatestRow(record); }
       resetForm();
       focusFirstField();
       ChapUtils.showToast(isEditing ? "Rekodi imesasishwa kikamilifu" : "Rekodi imehifadhiwa kikamilifu", "success");
       document.dispatchEvent(new CustomEvent(isEditing ? "chap:record-updated" : "chap:record-added", { detail: record }));
-    } catch (err) {
-      ChapUtils.showToast("Imeshindwa kuhifadhi rekodi", "error");
-    } finally {
-      submitBtn.disabled = false;
-    }
+    } catch (err) { ChapUtils.showToast("Imeshindwa kuhifadhi rekodi", "error"); }
+    finally { submitBtn.disabled = false; }
   }
-
   function init() {
     formEl = document.getElementById("productForm");
     submitBtn = document.getElementById("submitBtn");
     clearBtn = document.getElementById("clearBtn");
     latestCategoryTotalEl = document.getElementById("latestCategoryTotal");
     buildOrderedElements();
-
     if (!initialized) {
-      orderedEls.forEach((element) => {
-        element.addEventListener("keydown", handleEnterKey);
-      });
+      orderedEls.forEach((element) => { element.addEventListener("keydown", handleEnterKey); });
       formEl.addEventListener("submit", handleSubmit);
       clearBtn.addEventListener("click", handleClear);
       document.addEventListener("chap:records-cleared", loadLatestRecords);
       document.addEventListener("chap:records-deleted", loadLatestRecords);
       initialized = true;
     }
-
     loadLatestRecords();
-    if (pendingEditRecord) {
-      enterEditMode(pendingEditRecord);
-      pendingEditRecord = null;
-    }
+    if (pendingEditRecord) { enterEditMode(pendingEditRecord); pendingEditRecord = null; }
   }
-
-  function focusOnEnter() {
-    focusFirstField();
-  }
-
-  function openForEdit(record) {
-    pendingEditRecord = record;
-    window.location.hash = "#wekamkeka";
-  }
-
+  function focusOnEnter() { focusFirstField(); }
+  function openForEdit(record) { pendingEditRecord = record; window.location.hash = "#wekamkeka"; }
   return { init, focusOnEnter, openForEdit };
 })();
-/* ============================================
-   dashboard.js — Dashboard table logic
-   ============================================ */
 
 const ChapDashboard = (() => {
   const PAGE_SIZE = 8;
   const CSV_COLUMNS = [
-    ["ID", "id"], ["Jina la Bidhaa", "jinaBidhaa"], ["Aina", "aina"],
-    ["Kipimo", "kipimo"], ["Idadi", "idadi"], ["Bei Nunua", "beiNunua"],
-    ["Bei Rejareja", "beiRejareja"], ["Bei Jumla", "beiJumla"],
-    ["Expiry", "expiry"], ["Barcode", "barcode"], ["Created At", "createdAt"],
+    ["ID", "id"], ["Jina la Bidhaa", "jinaBidhaa"], ["Aina", "aina"], ["Kipimo", "kipimo"], ["Idadi", "idadi"],
+    ["Bei Nunua", "beiNunua"], ["Bei Rejareja", "beiRejareja"], ["Bei Jumla", "beiJumla"], ["Expiry", "expiry"],
+    ["Barcode", "barcode"], ["Created At", "createdAt"],
   ];
-
   let allRecords = [];
   let filteredRecords = [];
   let currentPage = 1;
   let searchInput, filterSelect, exportBtn, cleanDataBtn, categoryListEl, categoryTotalEl, tbody, emptyState, paginationEl, recordCountEl;
   let listenersBound = false;
-
   function matchesQuery(record, query) {
     if (!query) return true;
     const field = filterSelect.value;
-    const values = field === "all"
-      ? CSV_COLUMNS.map(([, key]) => record[key])
-      : [record[field]];
+    const values = field === "all" ? CSV_COLUMNS.map(([, key]) => record[key]) : [record[field]];
     const haystack = values.join(" ").toLowerCase();
     return haystack.includes(query);
   }
-
   function applyFilter() {
     const query = searchInput.value.trim().toLowerCase();
     filteredRecords = allRecords.filter((r) => matchesQuery(r, query));
     currentPage = 1;
     render();
   }
-
-  function csvCell(value) {
-    const text = value === null || value === undefined ? "" : String(value);
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
-  function exportCsv() {
-    if (filteredRecords.length === 0) {
-      ChapUtils.showToast("Hakuna rekodi za ku-export", "error");
-      return;
-    }
-
+  async function exportCsv() {
+    if (filteredRecords.length === 0) { ChapUtils.showToast("Hakuna rekodi za ku-export", "error"); return; }
     const exportRecords = [...filteredRecords].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
-    const headerHtml = CSV_COLUMNS.map(([label]) => `<th>${ChapUtils.escapeHtml(label)}</th>`).join("");
-    const bodyHtml = exportRecords.map((record, index) => {
-      const cells = CSV_COLUMNS.map(([, key]) => {
+    const rows = exportRecords.map((record, index) => {
+      const row = {};
+      CSV_COLUMNS.forEach(([label, key]) => {
         let value = key === "id" ? index + 1 : (record[key] ?? "");
-        if (key === "expiry" && (value === "-" || value === "")) {
-          value = "N/A";
-        }
-        return `<td>${ChapUtils.escapeHtml(value)}</td>`;
-      }).join("");
-      return `<tr>${cells}</tr>`;
-    }).join("");
-
-    const html = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Chap-Record Export</title>
-    <style>
-      body { font-family: Arial, sans-serif; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-      th { background: #f2f2f2; }
-    </style>
-  </head>
-  <body>
-    <table>
-      <thead><tr>${headerHtml}</tr></thead>
-      <tbody>${bodyHtml}</tbody>
-    </table>
-  </body>
-</html>`;
-
-    const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `chap-record-${new Date().toISOString().slice(0, 10)}.xls`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+        if (key === "expiry" && (value === "-" || value === "")) { value = "N/A"; }
+        row[label] = value;
+      });
+      return row;
+    });
+    const ws = XLSX.utils.json_to_sheet(rows, { header: CSV_COLUMNS.map(([label]) => label) });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Products");
+    await ChapUtils.downloadAndShareWorkbook(wb, `chap-record-${new Date().toISOString().slice(0, 10)}.xlsx`);
     ChapUtils.showToast("Excel file ime-download kikamilifu", "success");
   }
-
   function renderCategories() {
     const categories = new Map();
     allRecords.forEach((record) => {
@@ -1272,7 +1111,6 @@ const ChapDashboard = (() => {
     const items = [...categories.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
     categoryListEl.innerHTML = "";
     categoryTotalEl.textContent = String(items.length);
-
     if (items.length === 0) {
       const empty = document.createElement("p");
       empty.className = "category-empty";
@@ -1280,7 +1118,6 @@ const ChapDashboard = (() => {
       categoryListEl.appendChild(empty);
       return;
     }
-
     items.forEach(([name, count]) => {
       const item = document.createElement("li");
       const label = document.createElement("span");
@@ -1293,15 +1130,10 @@ const ChapDashboard = (() => {
       categoryListEl.appendChild(item);
     });
   }
-
   async function cleanAllData() {
-    if (allRecords.length === 0) {
-      ChapUtils.showToast("Hakuna data ya kufuta", "error");
-      return;
-    }
+    if (allRecords.length === 0) { ChapUtils.showToast("Hakuna data ya kufuta", "error"); return; }
     const confirmed = window.confirm("Una uhakika? Hii itafuta rekodi zote za Chap-Record kwenye kifaa hiki. Huwezi kurudisha data hizi.");
     if (!confirmed) return;
-
     cleanDataBtn.disabled = true;
     const originalLabel = cleanDataBtn.textContent;
     cleanDataBtn.textContent = "Inafuta...";
@@ -1312,19 +1144,13 @@ const ChapDashboard = (() => {
       renderCategories();
       document.dispatchEvent(new CustomEvent("chap:records-cleared"));
       ChapUtils.showToast("Data zote zimefutwa", "success");
-    } catch (err) {
-      ChapUtils.showToast("Imeshindwa kufuta data", "error");
-    } finally {
-      cleanDataBtn.disabled = false;
-      cleanDataBtn.textContent = originalLabel;
-    }
+    } catch (err) { ChapUtils.showToast("Imeshindwa kufuta data", "error"); }
+    finally { cleanDataBtn.disabled = false; cleanDataBtn.textContent = originalLabel; }
   }
-
   function renderRow(record) {
     const tr = document.createElement("tr");
     const status = ChapUtils.expiryStatus(record.expiry);
     const statusHtml = status ? `<span class="pill ${status.cls}">${status.label}</span>` : "-";
-
     tr.innerHTML = `
       <td class="cell-muted">#${record.id}</td>
       <td class="cell-strong">${ChapUtils.escapeHtml(record.jinaBidhaa)}</td>
@@ -1345,7 +1171,6 @@ const ChapDashboard = (() => {
     tr.querySelector(".delete-action").addEventListener("click", () => deleteSingleRecord(record));
     return tr;
   }
-
   async function deleteSingleRecord(record) {
     const confirmed = window.confirm(`Futa rekodi ya "${record.jinaBidhaa}"? Huwezi kurudisha data hii.`);
     if (!confirmed) return;
@@ -1354,29 +1179,20 @@ const ChapDashboard = (() => {
       await refresh();
       document.dispatchEvent(new CustomEvent("chap:records-deleted"));
       ChapUtils.showToast("Rekodi imefutwa", "success");
-    } catch (err) {
-      ChapUtils.showToast("Imeshindwa kufuta rekodi", "error");
-    }
+    } catch (err) { ChapUtils.showToast("Imeshindwa kufuta rekodi", "error"); }
   }
-
   function renderPagination(totalPages) {
     paginationEl.innerHTML = "";
     if (totalPages <= 1) return;
-
     const makeBtn = (label, page, opts = {}) => {
       const btn = document.createElement("button");
       btn.className = "page-btn" + (opts.active ? " active" : "");
       btn.textContent = label;
       btn.disabled = !!opts.disabled;
-      btn.addEventListener("click", () => {
-        currentPage = page;
-        render();
-      });
+      btn.addEventListener("click", () => { currentPage = page; render(); });
       return btn;
     };
-
     paginationEl.appendChild(makeBtn("‹", currentPage - 1, { disabled: currentPage === 1 }));
-
     for (let p = 1; p <= totalPages; p++) {
       if (totalPages > 7 && p !== 1 && p !== totalPages && Math.abs(p - currentPage) > 1) {
         if (p === 2 || p === totalPages - 1) {
@@ -1390,41 +1206,27 @@ const ChapDashboard = (() => {
       }
       paginationEl.appendChild(makeBtn(String(p), p, { active: p === currentPage }));
     }
-
     paginationEl.appendChild(makeBtn("›", currentPage + 1, { disabled: currentPage === totalPages }));
   }
-
   function render() {
     tbody.innerHTML = "";
     recordCountEl.textContent = `Rekodi ${filteredRecords.length}`;
-
-    if (filteredRecords.length === 0) {
-      emptyState.hidden = false;
-      paginationEl.innerHTML = "";
-      return;
-    }
+    if (filteredRecords.length === 0) { emptyState.hidden = false; paginationEl.innerHTML = ""; return; }
     emptyState.hidden = true;
-
     const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
     if (currentPage > totalPages) currentPage = totalPages;
-
     const start = (currentPage - 1) * PAGE_SIZE;
     const pageItems = filteredRecords.slice(start, start + PAGE_SIZE);
     pageItems.forEach((record) => tbody.appendChild(renderRow(record)));
-
     renderPagination(totalPages);
   }
-
   async function refresh() {
     try {
       allRecords = await ChapDB.getAllRecords();
       applyFilter();
       renderCategories();
-    } catch (err) {
-      ChapUtils.showToast("Imeshindwa kupakia dashboard", "error");
-    }
+    } catch (err) { ChapUtils.showToast("Imeshindwa kupakia dashboard", "error"); }
   }
-
   function init() {
     searchInput = document.getElementById("dashboardSearch");
     filterSelect = document.getElementById("dashboardFilter");
@@ -1436,7 +1238,6 @@ const ChapDashboard = (() => {
     emptyState = document.getElementById("dashboardEmptyState");
     paginationEl = document.getElementById("dashboardPagination");
     recordCountEl = document.getElementById("recordCount");
-
     if (!listenersBound) {
       searchInput.addEventListener("input", ChapUtils.debounce(applyFilter, 200));
       filterSelect.addEventListener("change", applyFilter);
@@ -1446,219 +1247,805 @@ const ChapDashboard = (() => {
       document.addEventListener("chap:record-updated", refresh);
       listenersBound = true;
     }
-
     refresh();
   }
-
   return { init };
 })();
-/* ============================================
-   theme.js — dark mode toggle (moon <-> sun)
-   ============================================ */
 
 const ChapTheme = (() => {
   function init() {
     const btn = document.getElementById("themeToggleBtn");
     if (!btn) return;
-
     btn.addEventListener("click", () => {
       const isDark = document.body.classList.toggle("dark-mode");
       btn.setAttribute("aria-pressed", String(isDark));
       btn.setAttribute("aria-label", isDark ? "Badilisha kwenda mandhari nyepesi" : "Badilisha kwenda mandhari nyeusi");
     });
   }
-
   return { init };
 })();
 
-/* ============================================
-   storage.js — storage capacity estimator
-   ============================================ */
-
 const ChapStorage = (() => {
-  // Rough average size (in bytes) of one product record once stored in
-  // IndexedDB, including its keys/values and internal engine overhead.
-  // This is an estimate — actual size depends on how long the text fields are.
   const AVG_RECORD_BYTES = 700;
-
   let helpBtn, backdrop, modal, closeBtn, bodyEl;
-
   function bytesToReadable(bytes) {
     if (!Number.isFinite(bytes)) return "-";
     const units = ["B", "KB", "MB", "GB", "TB"];
     let value = bytes;
     let unitIndex = 0;
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex++;
-    }
+    while (value >= 1024 && unitIndex < units.length - 1) { value /= 1024; unitIndex++; }
     return `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
   }
-
   async function getStorageEstimate() {
     if (navigator.storage && navigator.storage.estimate) {
       try {
         const { usage = 0, quota = 0 } = await navigator.storage.estimate();
         return { usage, quota, supported: true };
-      } catch (err) {
-        return { usage: 0, quota: 0, supported: false };
-      }
+      } catch (err) { return { usage: 0, quota: 0, supported: false }; }
     }
     return { usage: 0, quota: 0, supported: false };
   }
-
   function renderContent({ usage, quota, supported, recordCount }) {
     if (!supported || !quota) {
       bodyEl.innerHTML = `
         <p class="storage-modal-note">
-          Kivinjari chako hakiruhusu kukokotoa nafasi ya hifadhi moja kwa moja.
-          Kwa kawaida, rekodi moja inachukua takribani ${AVG_RECORD_BYTES} bytes,
-          hivyo unaweza kuhifadhi maelfu mengi ya rekodi bila tatizo kwenye vifaa vingi.
+          Kivinjari chako hakiruhusu kukokotoa nafasi ya hifadhi moja kwa moja. Kwa kawaida, rekodi moja inachukua
+          takribani ${AVG_RECORD_BYTES} bytes, hivyo unaweza kuhifadhi maelfu mengi ya rekodi bila tatizo kwenye vifaa vingi.
         </p>
       `;
       return;
     }
-
     const free = Math.max(quota - usage, 0);
     const usedPct = quota > 0 ? Math.min(100, (usage / quota) * 100) : 0;
     const estimatedRemainingRecords = Math.floor(free / AVG_RECORD_BYTES);
     const estimatedTotalCapacity = Math.floor(quota / AVG_RECORD_BYTES);
-
     bodyEl.innerHTML = `
-      <div class="storage-stat-row">
-        <span class="storage-stat-label">Rekodi zilizopo sasa</span>
-        <span class="storage-stat-value">${recordCount.toLocaleString("en-US")}</span>
-      </div>
-      <div class="storage-stat-row">
-        <span class="storage-stat-label">Nafasi iliyotumika</span>
-        <span class="storage-stat-value">${bytesToReadable(usage)}</span>
-      </div>
-      <div class="storage-stat-row">
-        <span class="storage-stat-label">Nafasi jumla ya kifaa</span>
-        <span class="storage-stat-value">${bytesToReadable(quota)}</span>
-      </div>
-      <div class="storage-stat-row">
-        <span class="storage-stat-label">Nafasi iliyobaki</span>
-        <span class="storage-stat-value">${bytesToReadable(free)}</span>
-      </div>
-      <div class="storage-bar-track">
-        <div class="storage-bar-fill" style="width:${usedPct.toFixed(1)}%;"></div>
-      </div>
-      <div class="storage-stat-row" style="margin-top:12px;">
-        <span class="storage-stat-label">Rekodi zinazoweza kuongezwa (makadirio)</span>
-        <span class="storage-stat-value">${estimatedRemainingRecords.toLocaleString("en-US")}</span>
-      </div>
-      <div class="storage-stat-row">
-        <span class="storage-stat-label">Uwezo jumla wa rekodi (makadirio)</span>
-        <span class="storage-stat-value">${estimatedTotalCapacity.toLocaleString("en-US")}</span>
-      </div>
+      <div class="storage-stat-row"><span class="storage-stat-label">Rekodi zilizopo sasa</span><span class="storage-stat-value">${recordCount.toLocaleString("en-US")}</span></div>
+      <div class="storage-stat-row"><span class="storage-stat-label">Nafasi iliyotumika</span><span class="storage-stat-value">${bytesToReadable(usage)}</span></div>
+      <div class="storage-stat-row"><span class="storage-stat-label">Nafasi jumla ya kifaa</span><span class="storage-stat-value">${bytesToReadable(quota)}</span></div>
+      <div class="storage-stat-row"><span class="storage-stat-label">Nafasi iliyobaki</span><span class="storage-stat-value">${bytesToReadable(free)}</span></div>
+      <div class="storage-bar-track"><div class="storage-bar-fill" style="width:${usedPct.toFixed(1)}%;"></div></div>
+      <div class="storage-stat-row" style="margin-top:12px;"><span class="storage-stat-label">Rekodi zinazoweza kuongezwa (makadirio)</span><span class="storage-stat-value">${estimatedRemainingRecords.toLocaleString("en-US")}</span></div>
+      <div class="storage-stat-row"><span class="storage-stat-label">Uwezo jumla wa rekodi (makadirio)</span><span class="storage-stat-value">${estimatedTotalCapacity.toLocaleString("en-US")}</span></div>
       <p class="storage-modal-note">
-        Makadirio haya yanategemea rekodi ya kawaida ya takribani ${AVG_RECORD_BYTES} bytes.
-        Rekodi zenye maandishi marefu zaidi (majina, barcode) zinaweza kuchukua nafasi zaidi,
-        na kivinjari kinaweza kutotoa nafasi yote ya kifaa kwa app hii pekee.
+        Makadirio haya yanategemea rekodi ya kawaida ya takribani ${AVG_RECORD_BYTES} bytes. Rekodi zenye maandishi
+        marefu zaidi (majina, barcode) zinaweza kuchukua nafasi zaidi, na kivinjari kinaweza kutotoa nafasi yote ya
+        kifaa kwa app hii pekee.
       </p>
     `;
   }
-
   async function open() {
     backdrop.classList.add("show");
     bodyEl.innerHTML = `<p class="storage-modal-loading">Inakokotoa nafasi ya hifadhi...</p>`;
-
     try {
-      const [{ usage, quota, supported }, records] = await Promise.all([
-        getStorageEstimate(),
-        ChapDB.getAllRecords(),
-      ]);
+      const [{ usage, quota, supported }, records] = await Promise.all([getStorageEstimate(), ChapDB.getAllRecords()]);
       renderContent({ usage, quota, supported, recordCount: records.length });
-    } catch (err) {
-      bodyEl.innerHTML = `<p class="storage-modal-note">Imeshindwa kupakia taarifa za hifadhi.</p>`;
-    }
+    } catch (err) { bodyEl.innerHTML = `<p class="storage-modal-note">Imeshindwa kupakia taarifa za hifadhi.</p>`; }
   }
-
-  function close() {
-    backdrop.classList.remove("show");
-  }
-
+  function close() { backdrop.classList.remove("show"); }
   function init() {
     helpBtn = document.getElementById("storageHelpBtn");
     backdrop = document.getElementById("storageModalBackdrop");
     modal = document.getElementById("storageModal");
     closeBtn = document.getElementById("storageModalClose");
     bodyEl = document.getElementById("storageModalBody");
-
     helpBtn.addEventListener("click", open);
     closeBtn.addEventListener("click", close);
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) close();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && backdrop.classList.contains("show")) close();
-    });
+    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && backdrop.classList.contains("show")) close(); });
   }
-
   return { init };
 })();
 
-/* ============================================
-   app.js — bootstrap + router
-   ============================================ */
+const ChapSecretNav = (() => {
+  const REQUIRED_CLICKS = 5;
+  let clickCount = 0;
+  let brandMark, navImportBtn;
+  function reveal() {
+    if (!navImportBtn.classList.contains("nav-locked")) return;
+    navImportBtn.classList.remove("nav-locked");
+    ChapUtils.showToast("Import Data imefunguliwa", "success");
+  }
+  function handleClick() {
+    if (!navImportBtn || !navImportBtn.classList.contains("nav-locked")) return;
+    clickCount++;
+    if (clickCount >= REQUIRED_CLICKS) { reveal(); }
+  }
+  function init() {
+    brandMark = document.querySelector(".brand-mark");
+    navImportBtn = document.getElementById("navImportBtn");
+    if (!brandMark || !navImportBtn) return;
+    brandMark.addEventListener("click", handleClick);
+  }
+  return { init };
+})();
+
+const ChapAuth = (() => {
+  const CREDENTIALS = { email: "stanlouchaprecord@gmail.com", password: "chaprecord11223344" };
+  let authenticated = false;
+  let backdrop, modal, closeBtn, form, emailInput, passwordInput, errorEl, submitBtn, navBtn;
+  function isAuthenticated() { return authenticated; }
+  function clearError() { errorEl.textContent = ""; emailInput.classList.remove("invalid"); passwordInput.classList.remove("invalid"); }
+  function openModal() { clearError(); form.reset(); backdrop.classList.add("show"); emailInput.focus(); }
+  function closeModal() { backdrop.classList.remove("show"); }
+  function handleSubmit(e) {
+    e.preventDefault();
+    clearError();
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+    if (email === CREDENTIALS.email.toLowerCase() && password === CREDENTIALS.password) {
+      authenticated = true;
+      closeModal();
+      window.location.hash = "#import";
+    } else {
+      emailInput.classList.add("invalid");
+      passwordInput.classList.add("invalid");
+      errorEl.textContent = "Email au password si sahihi.";
+    }
+  }
+  function init() {
+    backdrop = document.getElementById("loginModalBackdrop");
+    modal = document.getElementById("loginModal");
+    closeBtn = document.getElementById("loginModalClose");
+    form = document.getElementById("loginForm");
+    emailInput = document.getElementById("loginEmail");
+    passwordInput = document.getElementById("loginPassword");
+    errorEl = document.getElementById("loginError");
+    submitBtn = document.getElementById("loginSubmitBtn");
+    navBtn = document.getElementById("navImportBtn");
+    navBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (authenticated) { window.location.hash = "#import"; } else { openModal(); }
+    });
+    closeBtn.addEventListener("click", closeModal);
+    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && backdrop.classList.contains("show")) closeModal(); });
+    form.addEventListener("submit", handleSubmit);
+  }
+  return { init, isAuthenticated, openModal };
+})();
+
+const ChapImportDB = (() => {
+  const DB_NAME = "chap_import_db";
+  const DB_VERSION = 1;
+  const TABLES_STORE = "importTables";
+  const RECORDS_STORE = "importRecords";
+  let dbInstance = null;
+  function openDB() {
+    if (dbInstance) return Promise.resolve(dbInstance);
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(TABLES_STORE)) { db.createObjectStore(TABLES_STORE, { keyPath: "id", autoIncrement: true }); }
+        if (!db.objectStoreNames.contains(RECORDS_STORE)) {
+          const store = db.createObjectStore(RECORDS_STORE, { keyPath: "id", autoIncrement: true });
+          store.createIndex("tableId", "tableId", { unique: false });
+        }
+      };
+      request.onsuccess = (event) => { dbInstance = event.target.result; resolve(dbInstance); };
+      request.onerror = (event) => { reject(event.target.error || new Error("Imeshindwa kufungua Import DB")); };
+    });
+  }
+  async function addTable(name) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(TABLES_STORE, "readwrite");
+      const req = tx.objectStore(TABLES_STORE).add({ name, importedAt: new Date().toISOString() });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function getAllTables() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(TABLES_STORE, "readonly");
+      const req = tx.objectStore(TABLES_STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function deleteTable(tableId) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([TABLES_STORE, RECORDS_STORE], "readwrite");
+      tx.objectStore(TABLES_STORE).delete(tableId);
+      const recStore = tx.objectStore(RECORDS_STORE);
+      const index = recStore.index("tableId");
+      const cursorReq = index.openCursor(IDBKeyRange.only(tableId));
+      cursorReq.onsuccess = (event) => { const cursor = event.target.result; if (cursor) { cursor.delete(); cursor.continue(); } };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+  async function addRecordsBulk(tableId, records) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDS_STORE, "readwrite");
+      const store = tx.objectStore(RECORDS_STORE);
+      records.forEach((record) => { store.add({ ...record, tableId, createdAt: new Date().toISOString() }); });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+  async function getAllRecords() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDS_STORE, "readonly");
+      const req = tx.objectStore(RECORDS_STORE).getAll();
+      req.onsuccess = () => { const records = req.result || []; records.sort((a, b) => (a.id || 0) - (b.id || 0)); resolve(records); };
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function putRecord(record) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDS_STORE, "readwrite");
+      const req = tx.objectStore(RECORDS_STORE).put(record);
+      req.onsuccess = () => resolve({ ...record, id: req.result });
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function updateRecord(id, data) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDS_STORE, "readwrite");
+      const store = tx.objectStore(RECORDS_STORE);
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const existing = getReq.result;
+        if (!existing) { reject(new Error("Rekodi haijapatikana")); return; }
+        const updated = { ...existing, ...data, id };
+        const putReq = store.put(updated);
+        putReq.onsuccess = () => resolve(updated);
+        putReq.onerror = () => reject(putReq.error);
+      };
+      getReq.onerror = () => reject(getReq.error);
+    });
+  }
+  async function deleteRecord(id) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDS_STORE, "readwrite");
+      tx.objectStore(RECORDS_STORE).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+  async function clearAll() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([TABLES_STORE, RECORDS_STORE], "readwrite");
+      tx.objectStore(TABLES_STORE).clear();
+      tx.objectStore(RECORDS_STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+  return { openDB, addTable, getAllTables, deleteTable, addRecordsBulk, getAllRecords, putRecord, updateRecord, deleteRecord, clearAll };
+})();
+
+const ChapImport = (() => {
+  const PAGE_SIZE = 8;
+  const FIELD_ORDER = ["jinaBidhaa", "aina", "kipimo", "idadi", "beiNunua", "beiRejareja", "beiJumla", "expiry", "barcode"];
+  const NUMERIC_FIELDS = new Set(["idadi", "beiNunua", "beiRejareja", "beiJumla"]);
+  const HEADER_ALIASES = {
+    jinaBidhaa: ["jinalabidhaa", "jina", "bidhaa", "productname", "name", "item", "itemname", "product"],
+    aina: ["aina", "category", "type"],
+    kipimo: ["kipimo", "unit", "measure", "measurement"],
+    idadi: ["idadi", "quantity", "qty", "kiasi", "stock"],
+    beiNunua: ["beinunua", "buyprice", "costprice", "purchaseprice"],
+    beiRejareja: ["beirejareja", "beirejareza", "retailprice", "sellingprice"],
+    beiJumla: ["beijumla", "wholesaleprice", "bulkprice"],
+    expiry: ["expiry", "expirydate", "expdate", "tarehe", "mwisho"],
+    barcode: ["barcode", "code", "sku"],
+  };
+  const CSV_COLUMNS = [
+    ["ID", "id"], ["Jina la Bidhaa", "jinaBidhaa"], ["Aina", "aina"], ["Kipimo", "kipimo"], ["Idadi", "idadi"],
+    ["Bei Nunua", "beiNunua"], ["Bei Rejareja", "beiRejareja"], ["Bei Jumla", "beiJumla"], ["Expiry", "expiry"],
+    ["Barcode", "barcode"], ["Chanzo", "source"],
+  ];
+  let allRecords = [];
+  let allTables = [];
+  let filteredRecords = [];
+  let displayIndex = new Map();
+  let currentPage = 1;
+  let activeTableId = null;
+  let hiddenTableIds = new Set();
+  let editingRowId = null;
+  let undoStack = [];
+  let redoStack = [];
+  let addBtn, fileInput, undoBtn, redoBtn, searchInput, filterSelect, exportBtn, cleanDataBtn, tbody, emptyState, paginationEl, recordCountEl, tablesListEl, tablesTotalEl, showAllBtn;
+  let mainPanelEl, addRecordPanelEl, addRecordTriggerBtn, addRecordTargetLabelEl, addRecordBackBtn, addRecordFormEl, addRecordClearBtnEl;
+  let addRecordTargetTable = null;
+  let listenersBound = false;
+  function normalizeHeader(h) { return String(h || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  function mapHeaders(headerRow) {
+    const normalized = headerRow.map(normalizeHeader);
+    const mapping = {};
+    FIELD_ORDER.forEach((field) => {
+      const aliases = HEADER_ALIASES[field];
+      const idx = normalized.findIndex((h) => aliases.includes(h));
+      if (idx !== -1) mapping[field] = idx;
+    });
+    return mapping;
+  }
+  function excelSerialToDateStr(serial) {
+    if (typeof serial !== "number" || Number.isNaN(serial)) return null;
+    try {
+      const formatted = XLSX.SSF.format("yyyy-mm-dd", serial);
+      return /^\d{4}-\d{2}-\d{2}$/.test(formatted) ? formatted : null;
+    } catch (err) { return null; }
+  }
+  function rowsToRecords(rows) {
+    if (rows.length === 0) return [];
+    const headerRow = rows[0];
+    const mapping = mapHeaders(headerRow);
+    const matchedCount = Object.keys(mapping).length;
+    const useMapping = matchedCount >= 3;
+    const dataRows = useMapping ? rows.slice(1) : rows;
+    const records = [];
+    dataRows.forEach((row) => {
+      if (!row || row.every((c) => c === undefined || c === null || String(c).trim() === "")) return;
+      const record = {};
+      FIELD_ORDER.forEach((field, i) => {
+        const colIdx = useMapping ? mapping[field] : i;
+        let value = colIdx !== undefined ? row[colIdx] : "";
+        if (value === undefined || value === null) value = "";
+        if (field === "expiry") {
+          const serialDate = excelSerialToDateStr(value);
+          value = serialDate || String(value).trim();
+        } else if (NUMERIC_FIELDS.has(field)) {
+          const num = Number(value);
+          value = Number.isNaN(num) ? 0 : num;
+        } else {
+          value = String(value).trim();
+        }
+        record[field] = value;
+      });
+      if (record.jinaBidhaa) records.push(record);
+    });
+    return records;
+  }
+  function tableNameFor(tableId) { const t = allTables.find((x) => x.id === tableId); return t ? t.name : "Haijulikani"; }
+  function computeDisplayIndex() {
+    displayIndex = new Map();
+    const sorted = [...allRecords].sort((a, b) => (a.id || 0) - (b.id || 0));
+    sorted.forEach((r, i) => displayIndex.set(r.id, i + 1));
+  }
+  function matchesQuery(record, query) {
+    if (!query) return true;
+    const field = filterSelect.value;
+    const values = field === "all" ? FIELD_ORDER.map((k) => record[k]).concat([tableNameFor(record.tableId)]) : field === "id" ? [displayIndex.get(record.id)] : [record[field]];
+    const haystack = values.join(" ").toLowerCase();
+    return haystack.includes(query);
+  }
+  function applyFilter() {
+    const query = searchInput.value.trim().toLowerCase();
+    filteredRecords = allRecords
+      .filter((r) => (activeTableId === null ? true : r.tableId === activeTableId))
+      .filter((r) => !hiddenTableIds.has(r.tableId))
+      .filter((r) => matchesQuery(r, query));
+    currentPage = 1;
+    render();
+  }
+  function renderTablesList() {
+    tablesListEl.innerHTML = "";
+    tablesTotalEl.textContent = String(allTables.length);
+    if (showAllBtn) { showAllBtn.classList.toggle("active", activeTableId === null); }
+    if (allTables.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "category-empty";
+      empty.textContent = "Bado hakuna faili zilizoingizwa.";
+      tablesListEl.appendChild(empty);
+      return;
+    }
+    allTables.forEach((table) => {
+      const count = allRecords.filter((r) => r.tableId === table.id).length;
+      const isHidden = hiddenTableIds.has(table.id);
+      const li = document.createElement("li");
+      li.className = "import-table-item" + (activeTableId === table.id ? " active" : "") + (isHidden ? " table-hidden" : "");
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "import-table-name";
+      nameSpan.textContent = table.name;
+      const meta = document.createElement("span");
+      meta.className = "import-table-meta";
+      const countSpan = document.createElement("span");
+      countSpan.className = "import-table-count";
+      countSpan.textContent = `${count} ${count === 1 ? "record" : "records"}`;
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "import-table-toggle" + (isHidden ? " is-hidden" : "");
+      toggleBtn.title = isHidden ? `Onyesha rekodi za "${table.name}"` : `Ficha rekodi za "${table.name}" (dumisha nyingine zote)`;
+      toggleBtn.setAttribute("aria-pressed", String(isHidden));
+      toggleBtn.innerHTML = isHidden
+        ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.7 19.7 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+      toggleBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleTableVisibility(table); });
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "import-table-remove";
+      removeBtn.title = "Futa faili hii na rekodi zake";
+      removeBtn.innerHTML = "&times;";
+      removeBtn.addEventListener("click", (e) => { e.stopPropagation(); deleteTable(table); });
+      meta.append(countSpan, toggleBtn, removeBtn);
+      li.append(nameSpan, meta);
+      li.addEventListener("click", () => { activeTableId = activeTableId === table.id ? null : table.id; applyFilter(); renderTablesList(); });
+      li.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const confirmed = window.confirm(`Unataka kuongeza rekodi kwenye faili "${table.name}"?`);
+        if (confirmed) openAddRecordPanel(table);
+      });
+      tablesListEl.appendChild(li);
+    });
+  }
+  function showAllTables() { activeTableId = null; applyFilter(); renderTablesList(); }
+  function irEl(name) { return document.getElementById(`ir-${name}`); }
+  function irErrEl(name) { return document.getElementById(`ir-err-${name}`); }
+  function clearAddRecordErrors() {
+    FIELD_ORDER.forEach((name) => { irEl(name).classList.remove("invalid"); irErrEl(name).textContent = ""; });
+  }
+  function validateAddRecordForm() {
+    clearAddRecordErrors();
+    let valid = true;
+    let firstInvalid = null;
+    FIELD_ORDER.forEach((name) => {
+      const input = irEl(name);
+      const value = input.value.trim();
+      let message = "";
+      if (value === "") { message = "Sehemu hii inahitajika"; }
+      else if (input.type === "number" && Number.isNaN(Number(value))) { message = "Weka namba sahihi"; }
+      else if (input.type === "number" && Number(value) < 0) { message = "Namba haiwezi kuwa hasi"; }
+      if (message) { valid = false; input.classList.add("invalid"); irErrEl(name).textContent = message; if (!firstInvalid) firstInvalid = input; }
+    });
+    if (!valid && firstInvalid) firstInvalid.focus();
+    return valid;
+  }
+  function collectAddRecordData() {
+    const data = {};
+    FIELD_ORDER.forEach((name) => { const input = irEl(name); data[name] = NUMERIC_FIELDS.has(name) ? Number(input.value) : input.value.trim(); });
+    return data;
+  }
+  function openAddRecordPanel(table) {
+    addRecordTargetTable = table;
+    if (addRecordTargetLabelEl) addRecordTargetLabelEl.textContent = `Faili: ${table.name}`;
+    addRecordFormEl.reset();
+    clearAddRecordErrors();
+    mainPanelEl.hidden = true;
+    addRecordPanelEl.hidden = false;
+    irEl(FIELD_ORDER[0]).focus();
+  }
+  function closeAddRecordPanel() {
+    addRecordTargetTable = null;
+    addRecordPanelEl.hidden = true;
+    mainPanelEl.hidden = false;
+  }
+  function promptAddRecord() {
+    if (allTables.length === 0) { ChapUtils.showToast("Bado hakuna faili. Ongeza faili kwanza.", "error"); return; }
+    document.getElementById("importTablesTitle").scrollIntoView({ behavior: "smooth", block: "center" });
+    ChapUtils.showToast('Bofya mara mbili faili unalotaka kuongeza rekodi', "success");
+  }
+  async function handleAddRecordSubmit(e) {
+    e.preventDefault();
+    if (!addRecordTargetTable) { ChapUtils.showToast("Chagua faili kwanza", "error"); closeAddRecordPanel(); return; }
+    if (!validateAddRecordForm()) { ChapUtils.showToast("Tafadhali jaza sehemu zote kwa usahihi", "error"); return; }
+    const submitBtnEl = document.getElementById("importAddRecordSubmitBtn");
+    submitBtnEl.disabled = true;
+    try {
+      const data = collectAddRecordData();
+      await ChapImportDB.addRecordsBulk(addRecordTargetTable.id, [data]);
+      addRecordFormEl.reset();
+      clearAddRecordErrors();
+      await refresh();
+      irEl(FIELD_ORDER[0]).focus();
+      ChapUtils.showToast("Rekodi imeongezwa kikamilifu", "success");
+    } catch (err) { ChapUtils.showToast("Imeshindwa kuongeza rekodi", "error"); }
+    finally { submitBtnEl.disabled = false; }
+  }
+  function handleAddRecordClear() { addRecordFormEl.reset(); clearAddRecordErrors(); irEl(FIELD_ORDER[0]).focus(); }
+  function toggleTableVisibility(table) {
+    if (hiddenTableIds.has(table.id)) { hiddenTableIds.delete(table.id); } else { hiddenTableIds.add(table.id); }
+    applyFilter();
+    renderTablesList();
+  }
+  async function deleteTable(table) {
+    const confirmed = window.confirm(`Futa faili "${table.name}"? Rekodi zote zilizoingia kutoka faili hii zitafutwa. Huwezi kurudisha.`);
+    if (!confirmed) return;
+    try {
+      await ChapImportDB.deleteTable(table.id);
+      if (activeTableId === table.id) activeTableId = null;
+      hiddenTableIds.delete(table.id);
+      undoStack = [];
+      redoStack = [];
+      updateHistoryButtons();
+      await refresh();
+      ChapUtils.showToast("Faili na rekodi zake zimefutwa", "success");
+    } catch (err) { ChapUtils.showToast("Imeshindwa kufuta faili", "error"); }
+  }
+  function updateHistoryButtons() { undoBtn.disabled = undoStack.length === 0; redoBtn.disabled = redoStack.length === 0; }
+  function pushUndo(action) { undoStack.push(action); redoStack = []; updateHistoryButtons(); }
+  async function undo() {
+    const action = undoStack.pop();
+    if (!action) return;
+    try {
+      if (action.type === "edit") { await ChapImportDB.updateRecord(action.id, action.before); }
+      else if (action.type === "delete") { await ChapImportDB.putRecord(action.record); }
+      redoStack.push(action);
+      updateHistoryButtons();
+      await refresh();
+      ChapUtils.showToast("Kitendo kimerudishwa nyuma (undo)", "success");
+    } catch (err) { ChapUtils.showToast("Imeshindwa kufanya undo", "error"); }
+  }
+  async function redo() {
+    const action = redoStack.pop();
+    if (!action) return;
+    try {
+      if (action.type === "edit") { await ChapImportDB.updateRecord(action.id, action.after); }
+      else if (action.type === "delete") { await ChapImportDB.deleteRecord(action.record.id); }
+      undoStack.push(action);
+      updateHistoryButtons();
+      await refresh();
+      ChapUtils.showToast("Kitendo kimerudishwa mbele (redo)", "success");
+    } catch (err) { ChapUtils.showToast("Imeshindwa kufanya redo", "error"); }
+  }
+  function renderViewRow(record) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="cell-muted">${displayIndex.get(record.id)}</td>
+      <td class="cell-strong">${ChapUtils.escapeHtml(record.jinaBidhaa)}</td>
+      <td>${ChapUtils.escapeHtml(record.aina)}</td>
+      <td>${ChapUtils.escapeHtml(record.kipimo)}</td>
+      <td>${ChapUtils.formatNumber(record.idadi)}</td>
+      <td>${ChapUtils.formatNumber(record.beiNunua)}</td>
+      <td>${ChapUtils.formatNumber(record.beiRejareja)}</td>
+      <td>${ChapUtils.formatNumber(record.beiJumla)}</td>
+      <td>${ChapUtils.formatDate(record.expiry)}</td>
+      <td>${ChapUtils.escapeHtml(record.barcode)}</td>
+      <td><span class="import-source-badge" title="${ChapUtils.escapeHtml(tableNameFor(record.tableId))}">${ChapUtils.escapeHtml(tableNameFor(record.tableId))}</span></td>
+      <td class="action-cell">
+        <button type="button" class="row-action edit-action">Edit</button>
+        <button type="button" class="row-action delete-action">Delete</button>
+      </td>
+    `;
+    tr.querySelector(".edit-action").addEventListener("click", () => startEdit(record, tr));
+    tr.querySelector(".delete-action").addEventListener("click", () => deleteSingleRecord(record));
+    return tr;
+  }
+  function renderEditRow(record, tr) {
+    const cells = FIELD_ORDER.map((field) => {
+      const isNumeric = NUMERIC_FIELDS.has(field);
+      const val = ChapUtils.escapeHtml(record[field]);
+      return `<td><input type="${isNumeric ? "number" : "text"}" step="any" data-field="${field}" value="${val}" style="width:100%;min-width:70px;height:32px;padding:0 6px;border:1px solid #d7e0da;border-radius:6px;" /></td>`;
+    }).join("");
+    tr.innerHTML = `
+      <td class="cell-muted">${displayIndex.get(record.id)}</td>
+      ${cells}
+      <td><span class="import-source-badge">${ChapUtils.escapeHtml(tableNameFor(record.tableId))}</span></td>
+      <td class="action-cell">
+        <button type="button" class="row-action edit-action save-edit-btn">Save</button>
+        <button type="button" class="row-action delete-action cancel-edit-btn">Cancel</button>
+      </td>
+    `;
+    tr.querySelector(".save-edit-btn").addEventListener("click", () => saveEdit(record, tr));
+    tr.querySelector(".cancel-edit-btn").addEventListener("click", () => { editingRowId = null; render(); });
+  }
+  function startEdit(record, tr) { editingRowId = record.id; renderEditRow(record, tr); }
+  async function saveEdit(record, tr) {
+    const inputs = tr.querySelectorAll("input[data-field]");
+    const after = {};
+    inputs.forEach((input) => { const field = input.dataset.field; after[field] = NUMERIC_FIELDS.has(field) ? Number(input.value) || 0 : input.value.trim(); });
+    const before = {};
+    FIELD_ORDER.forEach((f) => { before[f] = record[f]; });
+    try {
+      await ChapImportDB.updateRecord(record.id, after);
+      pushUndo({ type: "edit", id: record.id, before, after });
+      editingRowId = null;
+      await refresh();
+      ChapUtils.showToast("Rekodi imesasishwa", "success");
+    } catch (err) { ChapUtils.showToast("Imeshindwa kusasisha rekodi", "error"); }
+  }
+  async function deleteSingleRecord(record) {
+    const confirmed = window.confirm(`Futa rekodi ya "${record.jinaBidhaa}"?`);
+    if (!confirmed) return;
+    try {
+      await ChapImportDB.deleteRecord(record.id);
+      pushUndo({ type: "delete", record: { ...record } });
+      await refresh();
+      ChapUtils.showToast("Rekodi imefutwa", "success");
+    } catch (err) { ChapUtils.showToast("Imeshindwa kufuta rekodi", "error"); }
+  }
+  function renderPagination(totalPages) {
+    paginationEl.innerHTML = "";
+    if (totalPages <= 1) return;
+    const makeBtn = (label, page, opts = {}) => {
+      const btn = document.createElement("button");
+      btn.className = "page-btn" + (opts.active ? " active" : "");
+      btn.textContent = label;
+      btn.disabled = !!opts.disabled;
+      btn.addEventListener("click", () => { currentPage = page; render(); });
+      return btn;
+    };
+    paginationEl.appendChild(makeBtn("‹", currentPage - 1, { disabled: currentPage === 1 }));
+    for (let p = 1; p <= totalPages; p++) {
+      if (totalPages > 7 && p !== 1 && p !== totalPages && Math.abs(p - currentPage) > 1) {
+        if (p === 2 || p === totalPages - 1) { const span = document.createElement("span"); span.textContent = "…"; span.style.padding = "0 4px"; paginationEl.appendChild(span); }
+        continue;
+      }
+      paginationEl.appendChild(makeBtn(String(p), p, { active: p === currentPage }));
+    }
+    paginationEl.appendChild(makeBtn("›", currentPage + 1, { disabled: currentPage === totalPages }));
+  }
+  function render() {
+    tbody.innerHTML = "";
+    recordCountEl.textContent = `Rekodi ${filteredRecords.length}`;
+    if (filteredRecords.length === 0) { emptyState.hidden = false; paginationEl.innerHTML = ""; return; }
+    emptyState.hidden = true;
+    const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = filteredRecords.slice(start, start + PAGE_SIZE);
+    pageItems.forEach((record) => tbody.appendChild(renderViewRow(record)));
+    renderPagination(totalPages);
+  }
+  async function exportExcel() {
+    if (filteredRecords.length === 0) { ChapUtils.showToast("Hakuna rekodi za ku-export", "error"); return; }
+    const exportRecords = [...filteredRecords].sort((a, b) => (a.id || 0) - (b.id || 0));
+    const rows = exportRecords.map((record) => {
+      const row = {};
+      CSV_COLUMNS.forEach(([label, key]) => {
+        let value = key === "id" ? displayIndex.get(record.id) : (key === "source" ? tableNameFor(record.tableId) : (record[key] ?? ""));
+        if (key === "expiry" && (value === "-" || value === "")) value = "N/A";
+        row[label] = value;
+      });
+      return row;
+    });
+    const ws = XLSX.utils.json_to_sheet(rows, { header: CSV_COLUMNS.map(([label]) => label) });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Import");
+    await ChapUtils.downloadAndShareWorkbook(wb, `chap-record-import-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    ChapUtils.showToast("Excel file ime-download kikamilifu", "success");
+  }
+  async function handleFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+    addBtn.disabled = true;
+    const originalLabel = addBtn.textContent;
+    let importedCount = 0;
+    for (const file of files) {
+      try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: "array", cellDates: false });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: true });
+        const records = rowsToRecords(rows);
+        if (records.length === 0) { ChapUtils.showToast(`Faili "${file.name}" haina rekodi zinazoeleweka`, "error"); continue; }
+        const tableId = await ChapImportDB.addTable(file.name);
+        await ChapImportDB.addRecordsBulk(tableId, records);
+        importedCount += records.length;
+      } catch (err) { ChapUtils.showToast(`Imeshindwa kusoma faili "${file.name}"`, "error"); }
+    }
+    addBtn.disabled = false;
+    addBtn.textContent = originalLabel;
+    fileInput.value = "";
+    if (importedCount > 0) {
+      undoStack = [];
+      redoStack = [];
+      updateHistoryButtons();
+      await refresh();
+      ChapUtils.showToast(`Rekodi ${importedCount} zimeingizwa kikamilifu`, "success");
+    }
+  }
+  async function cleanAllData() {
+    if (allRecords.length === 0 && allTables.length === 0) { ChapUtils.showToast("Hakuna data ya kufuta", "error"); return; }
+    const confirmed = window.confirm("Una uhakika? Hii itafuta rekodi zote na faili zote za Import Data. Huwezi kurudisha data hizi.");
+    if (!confirmed) return;
+    cleanDataBtn.disabled = true;
+    const originalLabel = cleanDataBtn.textContent;
+    cleanDataBtn.textContent = "Inafuta...";
+    try {
+      await ChapImportDB.clearAll();
+      activeTableId = null;
+      hiddenTableIds = new Set();
+      undoStack = [];
+      redoStack = [];
+      updateHistoryButtons();
+      await refresh();
+      ChapUtils.showToast("Data zote za Import zimefutwa", "success");
+    } catch (err) { ChapUtils.showToast("Imeshindwa kufuta data", "error"); }
+    finally { cleanDataBtn.disabled = false; cleanDataBtn.textContent = originalLabel; }
+  }
+  async function refresh() {
+    try {
+      [allRecords, allTables] = await Promise.all([ChapImportDB.getAllRecords(), ChapImportDB.getAllTables()]);
+      computeDisplayIndex();
+      applyFilter();
+      renderTablesList();
+    } catch (err) { ChapUtils.showToast("Imeshindwa kupakia Import Data", "error"); }
+  }
+  function init() {
+    addBtn = document.getElementById("importAddBtn");
+    fileInput = document.getElementById("importFileInput");
+    undoBtn = document.getElementById("importUndoBtn");
+    redoBtn = document.getElementById("importRedoBtn");
+    searchInput = document.getElementById("importSearch");
+    filterSelect = document.getElementById("importFilter");
+    exportBtn = document.getElementById("importExportBtn");
+    cleanDataBtn = document.getElementById("importCleanDataBtn");
+    tbody = document.getElementById("importTableBody");
+    emptyState = document.getElementById("importEmptyState");
+    paginationEl = document.getElementById("importPagination");
+    recordCountEl = document.getElementById("importRecordCount");
+    tablesListEl = document.getElementById("importTablesList");
+    tablesTotalEl = document.getElementById("importTablesTotal");
+    showAllBtn = document.getElementById("importShowAllBtn");
+    mainPanelEl = document.getElementById("importMainPanel");
+    addRecordPanelEl = document.getElementById("importAddRecordPanel");
+    addRecordTriggerBtn = document.getElementById("importAddRecordBtn");
+    addRecordTargetLabelEl = document.getElementById("importAddRecordTarget");
+    addRecordBackBtn = document.getElementById("importAddRecordBackBtn");
+    addRecordFormEl = document.getElementById("importAddRecordForm");
+    addRecordClearBtnEl = document.getElementById("importAddRecordClearBtn");
+    if (!listenersBound) {
+      addBtn.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+      undoBtn.addEventListener("click", undo);
+      redoBtn.addEventListener("click", redo);
+      searchInput.addEventListener("input", ChapUtils.debounce(applyFilter, 200));
+      filterSelect.addEventListener("change", applyFilter);
+      exportBtn.addEventListener("click", exportExcel);
+      cleanDataBtn.addEventListener("click", cleanAllData);
+      showAllBtn.addEventListener("click", showAllTables);
+      addRecordTriggerBtn.addEventListener("click", promptAddRecord);
+      addRecordBackBtn.addEventListener("click", closeAddRecordPanel);
+      addRecordFormEl.addEventListener("submit", handleAddRecordSubmit);
+      addRecordClearBtnEl.addEventListener("click", handleAddRecordClear);
+      listenersBound = true;
+    }
+    closeAddRecordPanel();
+    updateHistoryButtons();
+    refresh();
+  }
+  return { init };
+})();
 
 (() => {
-  const VIEWS = {
-    dashboard: document.getElementById("view-dashboard"),
-    wekamkeka: document.getElementById("view-wekamkeka"),
-  };
+  const VIEWS = { dashboard: document.getElementById("view-dashboard"), wekamkeka: document.getElementById("view-wekamkeka"), import: document.getElementById("view-import") };
   const DEFAULT_ROUTE = "dashboard";
-
-  function currentRoute() {
-    const hash = window.location.hash.replace("#", "");
-    return VIEWS[hash] ? hash : DEFAULT_ROUTE;
-  }
-
+  function currentRoute() { const hash = window.location.hash.replace("#", ""); return VIEWS[hash] ? hash : DEFAULT_ROUTE; }
   function showView(route) {
-    Object.keys(VIEWS).forEach((key) => {
-      VIEWS[key].hidden = key !== route;
-    });
+    Object.keys(VIEWS).forEach((key) => { VIEWS[key].hidden = key !== route; });
     ChapSidebar.setActiveRoute(route);
-
-    if (route === "dashboard") {
-      ChapDashboard.init();
-    } else if (route === "wekamkeka") {
-      ChapForm.init();
-    }
-
+    if (route === "dashboard") { ChapDashboard.init(); }
+    else if (route === "wekamkeka") { ChapForm.init(); }
+    else if (route === "import") { ChapImport.init(); }
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
-
   function route() {
-    showView(currentRoute());
+    const target = currentRoute();
+    if (target === "import" && !ChapAuth.isAuthenticated()) { window.location.hash = `#${DEFAULT_ROUTE}`; ChapAuth.openModal(); return; }
+    showView(target);
   }
-
   async function bootstrap() {
     ChapSidebar.init();
     ChapTheme.init();
     ChapStorage.init();
-
-    try {
-      await ChapDB.openDB();
-    } catch (err) {
-      ChapUtils.showToast("Imeshindwa kufungua hifadhidata", "error");
-    }
-
+    ChapAuth.init();
+    ChapSecretNav.init();
+    try { await ChapDB.openDB(); } catch (err) { ChapUtils.showToast("Imeshindwa kufungua hifadhidata", "error"); }
     ChapDashboard.init();
     ChapForm.init();
-
-    if (!window.location.hash) {
-      window.location.hash = `#${DEFAULT_ROUTE}`;
-    }
-
+    if (!window.location.hash) { window.location.hash = `#${DEFAULT_ROUTE}`; }
     window.addEventListener("hashchange", route);
     route();
   }
-
   document.addEventListener("DOMContentLoaded", bootstrap);
 })();
-
-  </script>
+</script>
 </body>
 </html>
