@@ -243,10 +243,10 @@ body.dark-mode .storage-bar-track { background:#232b26; }
 .modal-action-confirm { color:#fff; background:var(--green); border-color:var(--green); }
 .modal-action-confirm.danger { background:#c92a22; border-color:#c92a22; }
 .barcode-switch-field { display:flex; align-items:center; gap:9px; min-height:22px; margin:0 0 7px; color:#35443a; font-size:13px; font-weight:700; }
-.barcode-switch { appearance:none; position:relative; width:38px; height:22px; margin:0; background:#b8c5bc; border:0; border-radius:999px; cursor:pointer; transition:background .16s ease; }
-.barcode-switch::after { position:absolute; top:3px; left:3px; width:16px; height:16px; background:#fff; border-radius:50%; content:""; box-shadow:0 1px 3px rgba(0,0,0,.22); transition:transform .16s ease; }
+.barcode-switch { appearance:none; position:relative; width:32px; height:18px; margin:0; background:#b8c5bc; border:0; border-radius:999px; cursor:pointer; transition:background .16s ease; }
+.barcode-switch::after { position:absolute; top:3px; left:3px; width:12px; height:12px; background:#fff; border-radius:50%; content:""; box-shadow:0 1px 3px rgba(0,0,0,.22); transition:transform .16s ease; }
 .barcode-switch:checked { background:var(--green); }
-.barcode-switch:checked::after { transform:translateX(16px); }
+.barcode-switch:checked::after { transform:translateX(14px); }
 .barcode-field.is-disabled { display:none; }
 body.dark-mode .modal-action-cancel { color:#c7d1cb; background:#1c2420; border-color:#2c3630; }
 body.dark-mode .barcode-switch-field { color:#a9b4ae; }
@@ -303,6 +303,7 @@ body.dark-mode .import-source-badge { color:#4ade80; background:rgba(34,197,94,.
 .import-showall-btn.active { color:#fff; background:var(--green); border-color:var(--green); }
 body.dark-mode .import-showall-btn { color:#a3aea7; background:#1c2420; border-color:#2c3630; }
 body.dark-mode .import-showall-btn.active { color:#0d1310; background:#4ade80; border-color:#4ade80; }
+
 </style>
 </head>
 <body>
@@ -847,6 +848,7 @@ const ChapUtils = (() => {
     return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
   }
   function formatNumber(value) {
+    if (value === "" || value === null || value === undefined) return "";
     const num = Number(value);
     if (Number.isNaN(num)) return "-";
     return num.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -863,12 +865,28 @@ const ChapUtils = (() => {
     if (Number.isNaN(d.getTime())) return isoString;
     return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
+  function parseExpiryDate(value) {
+    const match = String(value || "").trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const enteredDay = Number(match[3]);
+    if (month < 1 || month > 12 || enteredDay < 0) return null;
+    const lastDay = new Date(year, month, 0).getDate();
+    // Day 00 is stored as the month-level expiry format, but evaluated as
+    // the final day of that month when deciding whether to show a warning.
+    const day = enteredDay === 0 ? lastDay : enteredDay;
+    if (day > lastDay) return null;
+    const date = new Date(year, month - 1, day);
+    return { date, normalized: `${year}-${String(month).padStart(2, "0")}-00` };
+  }
   function expiryStatus(expiryDateStr) {
     if (!expiryDateStr) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const expiry = new Date(expiryDateStr);
-    if (Number.isNaN(expiry.getTime())) return null;
+    const parsed = parseExpiryDate(expiryDateStr);
+    if (!parsed) return null;
+    const expiry = parsed.date;
     const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return { label: "Imeisha", cls: "pill-expired" };
     if (diffDays <= 30) return { label: `Siku ${diffDays}`, cls: "pill-soon" };
@@ -918,7 +936,7 @@ const ChapUtils = (() => {
       if (err && err.name !== "AbortError") { showToast("Imeshindwa kufungua chaguzi za kushiriki", "error"); }
     }
   }
-  return { debounce, formatNumber, formatDate, formatDateTime, expiryStatus, escapeHtml, showToast, downloadAndShareWorkbook };
+  return { debounce, formatNumber, formatDate, formatDateTime, parseExpiryDate, expiryStatus, escapeHtml, showToast, downloadAndShareWorkbook };
 })();
 
 const ChapSidebar = (() => {
@@ -996,9 +1014,9 @@ const ChapDialogs = (() => {
   }
   function showExpiryAlert(expiryValue) {
     const value = expiryValue.trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
-    const expiry = new Date(`${value}T00:00:00`);
-    if (Number.isNaN(expiry.getTime())) return;
+    const parsed = ChapUtils.parseExpiryDate(value);
+    if (!parsed) return;
+    const expiry = parsed.date;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const daysRemaining = Math.round((expiry - today) / 86400000);
@@ -1063,7 +1081,7 @@ const ChapForm = (() => {
       else if (input.type === "number" && Number(value) < 0) { message = "Namba haiwezi kuwa hasi"; }
       else if (name === "expiry") {
         const lower = value.toLowerCase();
-        const isDateLike = /^\d{4}-\d{2}-\d{2}$/.test(value);
+        const isDateLike = Boolean(ChapUtils.parseExpiryDate(value));
         const isTextValue = ["n/a", "na", "never", "no expiry", "does not expire", "haina mwisho", "-"].includes(lower);
         if (!isDateLike && !isTextValue) { message = "Weka tarehe au andika N/A/Never/-"; }
       }
@@ -1080,6 +1098,8 @@ const ChapForm = (() => {
     });
     if (data.beiJumla === data.beiRejareja) data.beiJumla = "";
     if (data.barcode === "-" || !barcodeIsEnabled()) data.barcode = "";
+    const parsedExpiry = ChapUtils.parseExpiryDate(data.expiry);
+    if (parsedExpiry) data.expiry = parsedExpiry.normalized;
     return data;
   }
   function resetForm() { const barcodeEnabled = barcodeIsEnabled(); formEl.reset(); barcodeToggle.checked = barcodeEnabled; updateBarcodeVisibility(); clearErrors(); editingId = null; submitBtn.textContent = "Submit"; }
@@ -1826,7 +1846,7 @@ const ChapImport = (() => {
       else if (input.type === "number" && Number(value) < 0) { message = "Namba haiwezi kuwa hasi"; }
       else if (name === "expiry") {
         const lower = value.toLowerCase();
-        const isDateLike = /^\d{4}-\d{2}-\d{2}$/.test(value);
+        const isDateLike = Boolean(ChapUtils.parseExpiryDate(value));
         const isTextValue = ["n/a", "na", "never", "no expiry", "does not expire", "haina mwisho", "-"].includes(lower);
         if (!isDateLike && !isTextValue) message = "Weka tarehe au andika N/A/Never/-";
       }
@@ -1840,6 +1860,8 @@ const ChapImport = (() => {
     FIELD_ORDER.forEach((name) => { const input = irEl(name); data[name] = NUMERIC_FIELDS.has(name) ? Number(input.value) : input.value.trim(); });
     if (data.beiJumla === data.beiRejareja) data.beiJumla = "";
     if (data.barcode === "-" || !importBarcodeIsEnabled()) data.barcode = "";
+    const parsedExpiry = ChapUtils.parseExpiryDate(data.expiry);
+    if (parsedExpiry) data.expiry = parsedExpiry.normalized;
     return data;
   }
   function openAddRecordPanel(table) {
