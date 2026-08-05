@@ -848,7 +848,6 @@ const ChapUtils = (() => {
     return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
   }
   function formatNumber(value) {
-    if (value === "" || value === null || value === undefined) return "";
     const num = Number(value);
     if (Number.isNaN(num)) return "-";
     return num.toLocaleString("en-US", { maximumFractionDigits: 2 });
