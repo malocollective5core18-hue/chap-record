@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Document</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link rel="icon" type="image/png" href="https://res.cloudinary.com/dcpqnmdas/image/upload/t_uni2/uni1_bmlyut.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root { --green:#16a34a; --green-dark:#15803d; --ink:#18231c; --muted:#68756d; --line:#e3e9e5; --surface:#fff; --canvas:#f5f7f6; --header-h:70px; --sidebar-w:248px; --sidebar-mini:76px; --table-zoom:1; --table-zoom-base:1; --table-font-base:.82rem; --table-head-font-base:.70rem; --table-padding-x:6px; --table-padding-y:14px; --table-min-width:940px; }
@@ -232,6 +233,23 @@ body.dark-mode .storage-bar-track { background:#232b26; }
 .storage-bar-fill { height:100%; background:var(--green); border-radius:999px; transition:width .4s ease; }
 .storage-modal-note { margin:14px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
 .storage-modal-loading { padding:18px 0; color:var(--muted); font-size:13px; text-align:center; }
+.action-modal { max-width:400px; }
+.action-modal-message { margin:0; color:var(--muted); font-size:14px; line-height:1.5; }
+.action-modal-message.critical { color:#b42318; font-weight:700; }
+.action-modal-message.warning { color:#a65a00; font-weight:700; }
+.action-modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+.modal-action-btn { min-width:92px; height:40px; padding:0 14px; border:1px solid #cfdad2; border-radius:8px; font-weight:750; }
+.modal-action-cancel { color:#4c5a51; background:#fff; }
+.modal-action-confirm { color:#fff; background:var(--green); border-color:var(--green); }
+.modal-action-confirm.danger { background:#c92a22; border-color:#c92a22; }
+.barcode-switch-field { display:flex; align-items:center; gap:9px; min-height:22px; margin:0 0 7px; color:#35443a; font-size:13px; font-weight:700; }
+.barcode-switch { appearance:none; position:relative; width:38px; height:22px; margin:0; background:#b8c5bc; border:0; border-radius:999px; cursor:pointer; transition:background .16s ease; }
+.barcode-switch::after { position:absolute; top:3px; left:3px; width:16px; height:16px; background:#fff; border-radius:50%; content:""; box-shadow:0 1px 3px rgba(0,0,0,.22); transition:transform .16s ease; }
+.barcode-switch:checked { background:var(--green); }
+.barcode-switch:checked::after { transform:translateX(16px); }
+.barcode-field.is-disabled { display:none; }
+body.dark-mode .modal-action-cancel { color:#c7d1cb; background:#1c2420; border-color:#2c3630; }
+body.dark-mode .barcode-switch-field { color:#a9b4ae; }
 .login-modal { width:100%; max-width:380px; }
 .login-modal-note { margin:0 0 16px; color:var(--muted); font-size:12.5px; line-height:1.5; }
 .login-field { margin-bottom:14px; }
@@ -471,9 +489,12 @@ body.dark-mode .import-showall-btn.active { color:#0d1310; background:#4ade80; b
 <span class="field-error" id="err-expiry"></span>
 </div>
 <div class="field">
+<label class="barcode-switch-field" for="f-barcode-enabled"><input class="barcode-switch" type="checkbox" id="f-barcode-enabled" checked /> Include Barcode</label>
+<div class="barcode-field" id="f-barcode-field">
 <label for="f-barcode">Barcode</label>
 <input type="text" id="f-barcode" name="barcode" data-order="8" />
 <span class="field-error" id="err-barcode"></span>
+</div>
 </div>
 </div>
 <div class="form-actions">
@@ -667,9 +688,12 @@ Rudi
 <span class="field-error" id="ir-err-expiry"></span>
 </div>
 <div class="field">
+<label class="barcode-switch-field" for="ir-barcode-enabled"><input class="barcode-switch" type="checkbox" id="ir-barcode-enabled" checked /> Include Barcode</label>
+<div class="barcode-field" id="ir-barcode-field">
 <label for="ir-barcode">Barcode</label>
 <input type="text" id="ir-barcode" name="barcode" />
 <span class="field-error" id="ir-err-barcode"></span>
+</div>
 </div>
 </div>
 <div class="form-actions">
@@ -712,6 +736,20 @@ Rudi
 <span class="login-error" id="loginError"></span>
 <button type="submit" class="login-submit-btn" id="loginSubmitBtn">Ingia</button>
 </form>
+</div>
+</div>
+
+<div class="storage-modal-backdrop" id="actionModalBackdrop">
+<div class="storage-modal action-modal" id="actionModal" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+<div class="storage-modal-header">
+<h2 id="actionModalTitle">Thibitisha</h2>
+<button type="button" class="storage-modal-close" id="actionModalClose" aria-label="Funga">&times;</button>
+</div>
+<p class="action-modal-message" id="actionModalMessage"></p>
+<div class="action-modal-actions" id="actionModalActions">
+<button type="button" class="modal-action-btn modal-action-cancel" id="actionModalCancel">Ghairi</button>
+<button type="button" class="modal-action-btn modal-action-confirm" id="actionModalConfirm">Endelea</button>
+</div>
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -932,13 +970,73 @@ const ChapSidebar = (() => {
   return { init, setActiveRoute };
 })();
 
+const ChapDialogs = (() => {
+  let backdrop, titleEl, messageEl, closeBtn, cancelBtn, confirmBtn, resolver = null;
+  function close(result = false) {
+    if (!backdrop || !backdrop.classList.contains("show")) return;
+    backdrop.classList.remove("show");
+    const resolve = resolver;
+    resolver = null;
+    if (resolve) resolve(result);
+  }
+  function open({ title, message, type = "", confirmText = "Sawa", cancelText = "", danger = false }) {
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    messageEl.className = `action-modal-message ${type}`.trim();
+    confirmBtn.textContent = confirmText;
+    confirmBtn.classList.toggle("danger", danger);
+    cancelBtn.textContent = cancelText || "Ghairi";
+    cancelBtn.hidden = !cancelText;
+    backdrop.classList.add("show");
+    confirmBtn.focus();
+    return new Promise((resolve) => { resolver = resolve; });
+  }
+  function confirmClear() {
+    return open({ title: "Thibitisha kufuta", message: "Una uhakika unataka kufuta taarifa zote ulizoandika kwenye fomu?", confirmText: "Futa", cancelText: "Ghairi", danger: true });
+  }
+  function showExpiryAlert(expiryValue) {
+    const value = expiryValue.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    const expiry = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(expiry.getTime())) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysRemaining = Math.round((expiry - today) / 86400000);
+    if (daysRemaining < 0) {
+      open({ title: "Bidhaa imeisha muda", message: "Bidhaa hii imesha expire. Tafadhali mjulishe muuzaji.", type: "critical", confirmText: "Sawa" });
+    } else if (daysRemaining <= 10) {
+      open({ title: "Tahadhari ya expiry", message: `Bado siku ${daysRemaining} bidhaa hii iharibike. Tafadhali mjulishe muuzaji.`, type: "warning", confirmText: "Sawa" });
+    }
+  }
+  function init() {
+    backdrop = document.getElementById("actionModalBackdrop");
+    titleEl = document.getElementById("actionModalTitle");
+    messageEl = document.getElementById("actionModalMessage");
+    closeBtn = document.getElementById("actionModalClose");
+    cancelBtn = document.getElementById("actionModalCancel");
+    confirmBtn = document.getElementById("actionModalConfirm");
+    closeBtn.addEventListener("click", () => close(false));
+    cancelBtn.addEventListener("click", () => close(false));
+    confirmBtn.addEventListener("click", () => close(true));
+    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(false); });
+  }
+  return { init, confirmClear, showExpiryAlert };
+})();
+
 const ChapForm = (() => {
   const FIELD_ORDER = ["jinaBidhaa", "aina", "kipimo", "idadi", "beiNunua", "beiRejareja", "beiJumla", "expiry", "barcode"];
   const LATEST_LIMIT = 10;
-  let formEl, submitBtn, clearBtn, orderedEls, latestCategoryTotalEl, editingId = null, pendingEditRecord = null, initialized = false;
+  let formEl, submitBtn, clearBtn, barcodeToggle, barcodeField, orderedEls, latestCategoryTotalEl, editingId = null, pendingEditRecord = null, initialized = false;
   function el(name) { return document.getElementById(`f-${name}`); }
   function errEl(name) { return document.getElementById(`err-${name}`); }
-  function buildOrderedElements() { orderedEls = FIELD_ORDER.map((name) => el(name)).concat([submitBtn]); }
+  function barcodeIsEnabled() { return barcodeToggle.checked; }
+  function updateBarcodeVisibility() {
+    barcodeField.classList.toggle("is-disabled", !barcodeIsEnabled());
+    if (!barcodeIsEnabled()) { el("barcode").value = ""; }
+    buildOrderedElements();
+  }
+  function buildOrderedElements() { orderedEls = FIELD_ORDER.filter((name) => name !== "barcode" || barcodeIsEnabled()).map((name) => el(name)).concat([submitBtn]); }
   function focusFirstField() { el(FIELD_ORDER[0]).focus(); }
   function handleEnterKey(e) {
     if (e.key !== "Enter") return;
@@ -956,6 +1054,7 @@ const ChapForm = (() => {
     let firstInvalid = null;
     let valid = true;
     FIELD_ORDER.forEach((name) => {
+      if (name === "barcode" && !barcodeIsEnabled()) return;
       const input = el(name);
       const value = input.value.trim();
       let message = "";
@@ -975,11 +1074,16 @@ const ChapForm = (() => {
   }
   function collectFormData() {
     const data = {};
-    FIELD_ORDER.forEach((name) => { const input = el(name); data[name] = input.type === "number" ? Number(input.value) : input.value.trim(); });
+    FIELD_ORDER.forEach((name) => {
+      const input = el(name);
+      data[name] = input.type === "number" ? Number(input.value) : input.value.trim();
+    });
+    if (data.beiJumla === data.beiRejareja) data.beiJumla = "";
+    if (data.barcode === "-" || !barcodeIsEnabled()) data.barcode = "";
     return data;
   }
-  function resetForm() { formEl.reset(); clearErrors(); editingId = null; submitBtn.textContent = "Submit"; }
-  function handleClear() { resetForm(); focusFirstField(); }
+  function resetForm() { const barcodeEnabled = barcodeIsEnabled(); formEl.reset(); barcodeToggle.checked = barcodeEnabled; updateBarcodeVisibility(); clearErrors(); editingId = null; submitBtn.textContent = "Submit"; }
+  async function handleClear() { if (await ChapDialogs.confirmClear()) { resetForm(); focusFirstField(); } }
   function enterEditMode(record) {
     FIELD_ORDER.forEach((name) => { el(name).value = record[name] ?? ""; });
     clearErrors();
@@ -1045,12 +1149,16 @@ const ChapForm = (() => {
     formEl = document.getElementById("productForm");
     submitBtn = document.getElementById("submitBtn");
     clearBtn = document.getElementById("clearBtn");
+    barcodeToggle = document.getElementById("f-barcode-enabled");
+    barcodeField = document.getElementById("f-barcode-field");
     latestCategoryTotalEl = document.getElementById("latestCategoryTotal");
     buildOrderedElements();
     if (!initialized) {
       orderedEls.forEach((element) => { element.addEventListener("keydown", handleEnterKey); });
       formEl.addEventListener("submit", handleSubmit);
       clearBtn.addEventListener("click", handleClear);
+      barcodeToggle.addEventListener("change", updateBarcodeVisibility);
+      el("expiry").addEventListener("change", () => ChapDialogs.showExpiryAlert(el("expiry").value));
       document.addEventListener("chap:records-cleared", loadLatestRecords);
       document.addEventListener("chap:records-deleted", loadLatestRecords);
       initialized = true;
@@ -1569,7 +1677,7 @@ const ChapImport = (() => {
   let undoStack = [];
   let redoStack = [];
   let addBtn, fileInput, undoBtn, redoBtn, searchInput, filterSelect, exportBtn, cleanDataBtn, tbody, emptyState, paginationEl, recordCountEl, tablesListEl, tablesTotalEl, showAllBtn;
-  let mainPanelEl, addRecordPanelEl, addRecordTriggerBtn, addRecordTargetLabelEl, addRecordBackBtn, addRecordFormEl, addRecordClearBtnEl, logoutBtn;
+  let mainPanelEl, addRecordPanelEl, addRecordTriggerBtn, addRecordTargetLabelEl, addRecordBackBtn, addRecordFormEl, addRecordClearBtnEl, importBarcodeToggle, importBarcodeField, logoutBtn;
   let addRecordTargetTable = null;
   let listenersBound = false;
   function normalizeHeader(h) { return String(h || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
@@ -1696,6 +1804,11 @@ const ChapImport = (() => {
   function showAllTables() { activeTableId = null; applyFilter(); renderTablesList(); }
   function irEl(name) { return document.getElementById(`ir-${name}`); }
   function irErrEl(name) { return document.getElementById(`ir-err-${name}`); }
+  function importBarcodeIsEnabled() { return importBarcodeToggle.checked; }
+  function updateImportBarcodeVisibility() {
+    importBarcodeField.classList.toggle("is-disabled", !importBarcodeIsEnabled());
+    if (!importBarcodeIsEnabled()) irEl("barcode").value = "";
+  }
   function clearAddRecordErrors() {
     FIELD_ORDER.forEach((name) => { irEl(name).classList.remove("invalid"); irErrEl(name).textContent = ""; });
   }
@@ -1704,12 +1817,19 @@ const ChapImport = (() => {
     let valid = true;
     let firstInvalid = null;
     FIELD_ORDER.forEach((name) => {
+      if (name === "barcode" && !importBarcodeIsEnabled()) return;
       const input = irEl(name);
       const value = input.value.trim();
       let message = "";
       if (value === "") { message = "Sehemu hii inahitajika"; }
       else if (input.type === "number" && Number.isNaN(Number(value))) { message = "Weka namba sahihi"; }
       else if (input.type === "number" && Number(value) < 0) { message = "Namba haiwezi kuwa hasi"; }
+      else if (name === "expiry") {
+        const lower = value.toLowerCase();
+        const isDateLike = /^\d{4}-\d{2}-\d{2}$/.test(value);
+        const isTextValue = ["n/a", "na", "never", "no expiry", "does not expire", "haina mwisho", "-"].includes(lower);
+        if (!isDateLike && !isTextValue) message = "Weka tarehe au andika N/A/Never/-";
+      }
       if (message) { valid = false; input.classList.add("invalid"); irErrEl(name).textContent = message; if (!firstInvalid) firstInvalid = input; }
     });
     if (!valid && firstInvalid) firstInvalid.focus();
@@ -1718,12 +1838,17 @@ const ChapImport = (() => {
   function collectAddRecordData() {
     const data = {};
     FIELD_ORDER.forEach((name) => { const input = irEl(name); data[name] = NUMERIC_FIELDS.has(name) ? Number(input.value) : input.value.trim(); });
+    if (data.beiJumla === data.beiRejareja) data.beiJumla = "";
+    if (data.barcode === "-" || !importBarcodeIsEnabled()) data.barcode = "";
     return data;
   }
   function openAddRecordPanel(table) {
     addRecordTargetTable = table;
     if (addRecordTargetLabelEl) addRecordTargetLabelEl.textContent = `Faili: ${table.name}`;
+    const barcodeEnabled = importBarcodeIsEnabled();
     addRecordFormEl.reset();
+    importBarcodeToggle.checked = barcodeEnabled;
+    updateImportBarcodeVisibility();
     clearAddRecordErrors();
     mainPanelEl.hidden = true;
     addRecordPanelEl.hidden = false;
@@ -1756,7 +1881,15 @@ const ChapImport = (() => {
     } catch (err) { ChapUtils.showToast("Imeshindwa kuongeza rekodi", "error"); }
     finally { submitBtnEl.disabled = false; }
   }
-  function handleAddRecordClear() { addRecordFormEl.reset(); clearAddRecordErrors(); irEl(FIELD_ORDER[0]).focus(); }
+  async function handleAddRecordClear() {
+    if (!(await ChapDialogs.confirmClear())) return;
+    const barcodeEnabled = importBarcodeIsEnabled();
+    addRecordFormEl.reset();
+    importBarcodeToggle.checked = barcodeEnabled;
+    updateImportBarcodeVisibility();
+    clearAddRecordErrors();
+    irEl(FIELD_ORDER[0]).focus();
+  }
   function toggleTableVisibility(table) {
     if (hiddenTableIds.has(table.id)) { hiddenTableIds.delete(table.id); } else { hiddenTableIds.add(table.id); }
     applyFilter();
@@ -2000,7 +2133,10 @@ const ChapImport = (() => {
     addRecordBackBtn = document.getElementById("importAddRecordBackBtn");
     addRecordFormEl = document.getElementById("importAddRecordForm");
     addRecordClearBtnEl = document.getElementById("importAddRecordClearBtn");
+    importBarcodeToggle = document.getElementById("ir-barcode-enabled");
+    importBarcodeField = document.getElementById("ir-barcode-field");
     logoutBtn = document.getElementById("importLogoutBtn");
+    updateImportBarcodeVisibility();
     if (!listenersBound) {
       addBtn.addEventListener("click", () => fileInput.click());
       fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
@@ -2016,6 +2152,8 @@ const ChapImport = (() => {
       addRecordBackBtn.addEventListener("click", closeAddRecordPanel);
       addRecordFormEl.addEventListener("submit", handleAddRecordSubmit);
       addRecordClearBtnEl.addEventListener("click", handleAddRecordClear);
+      importBarcodeToggle.addEventListener("change", updateImportBarcodeVisibility);
+      irEl("expiry").addEventListener("change", () => ChapDialogs.showExpiryAlert(irEl("expiry").value));
       listenersBound = true;
     }
     closeAddRecordPanel();
@@ -2047,6 +2185,7 @@ const ChapImport = (() => {
     ChapTheme.init();
     ChapStorage.init();
     ChapAuth.init();
+    ChapDialogs.init();
     ChapSecretNav.init();
     try { await ChapDB.openDB(); } catch (err) { ChapUtils.showToast("Imeshindwa kufungua hifadhidata", "error"); }
     ChapDashboard.init();
