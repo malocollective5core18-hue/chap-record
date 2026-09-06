@@ -1215,24 +1215,32 @@ const ChapDashboard = (() => {
     currentPage = 1;
     render();
   }
-  async function exportCsv() {
-    if (filteredRecords.length === 0) { ChapUtils.showToast("Hakuna rekodi za ku-export", "error"); return; }
-    const exportRecords = [...filteredRecords].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
-    const rows = exportRecords.map((record, index) => {
-      const row = {};
-      CSV_COLUMNS.forEach(([label, key]) => {
-        let value = key === "id" ? index + 1 : (record[key] ?? "");
-        if (key === "expiry" && (value === "-" || value === "")) { value = "N/A"; }
-        row[label] = value;
-      });
-      return row;
+
+
+
+// Dashboard export — now exports ALL records, not just the filtered/search-matched ones
+async function exportCsv() {
+  if (allRecords.length === 0) { ChapUtils.showToast("Hakuna rekodi za ku-export", "error"); return; }
+  const exportRecords = [...allRecords].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+  const rows = exportRecords.map((record, index) => {
+    const row = {};
+    CSV_COLUMNS.forEach(([label, key]) => {
+      let value = key === "id" ? index + 1 : (record[key] ?? "");
+      if (key === "expiry" && (value === "-" || value === "")) { value = "N/A"; }
+      row[label] = value;
     });
-    const ws = XLSX.utils.json_to_sheet(rows, { header: CSV_COLUMNS.map(([label]) => label) });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Products");
-    await ChapUtils.downloadAndShareWorkbook(wb, `chap-record-${new Date().toISOString().slice(0, 10)}.xlsx`);
-    ChapUtils.showToast("Excel file ime-download kikamilifu", "success");
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows, { header: CSV_COLUMNS.map(([label]) => label) });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Products");
+  await ChapUtils.downloadAndShareWorkbook(wb, `chap-record-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  ChapUtils.showToast("Excel file ime-download kikamilifu", "success");
   }
+
+
+
+  
   function renderCategories() {
     const categories = new Map();
     allRecords.forEach((record) => {
@@ -2055,24 +2063,38 @@ const ChapImport = (() => {
     pageItems.forEach((record) => tbody.appendChild(renderViewRow(record)));
     renderPagination(totalPages);
   }
-  async function exportExcel() {
-    if (filteredRecords.length === 0) { ChapUtils.showToast("Hakuna rekodi za ku-export", "error"); return; }
-    const exportRecords = [...filteredRecords].sort((a, b) => (a.id || 0) - (b.id || 0));
-    const rows = exportRecords.map((record) => {
-      const row = {};
-      CSV_COLUMNS.forEach(([label, key]) => {
-        let value = key === "id" ? displayIndex.get(record.id) : (key === "source" ? tableNameFor(record.tableId) : (record[key] ?? ""));
-        if (key === "expiry" && (value === "-" || value === "")) value = "N/A";
-        row[label] = value;
-      });
-      return row;
+
+
+
+
+
+  
+  // Import export — now exports ALL non-hidden records, ignoring the search box
+async function exportExcel() {
+  const exportSource = allRecords.filter((r) => !hiddenTableIds.has(r.tableId));
+  if (exportSource.length === 0) { ChapUtils.showToast("Hakuna rekodi za ku-export", "error"); return; }
+  const exportRecords = [...exportSource].sort((a, b) => (a.id || 0) - (b.id || 0));
+  const rows = exportRecords.map((record) => {
+    const row = {};
+    CSV_COLUMNS.forEach(([label, key]) => {
+      let value = key === "id" ? displayIndex.get(record.id) : (key === "source" ? tableNameFor(record.tableId) : (record[key] ?? ""));
+      if (key === "expiry" && (value === "-" || value === "")) value = "N/A";
+      row[label] = value;
     });
-    const ws = XLSX.utils.json_to_sheet(rows, { header: CSV_COLUMNS.map(([label]) => label) });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Import");
-    await ChapUtils.downloadAndShareWorkbook(wb, `chap-record-import-${new Date().toISOString().slice(0, 10)}.xlsx`);
-    ChapUtils.showToast("Excel file ime-download kikamilifu", "success");
-  }
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows, { header: CSV_COLUMNS.map(([label]) => label) });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Import");
+  await ChapUtils.downloadAndShareWorkbook(wb, `chap-record-import-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  ChapUtils.showToast("Excel file ime-download kikamilifu", "success");
+}
+
+
+
+
+
+  
   async function handleFiles(fileList) {
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
